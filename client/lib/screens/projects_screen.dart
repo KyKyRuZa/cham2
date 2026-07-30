@@ -5,10 +5,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
+import '../utils/app_localizations.dart';
 import '../utils/transitions.dart';
 import 'camera_page.dart';
 import 'export_screen.dart';
 import 'editor_screen.dart';
+import 'settings_screen.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -53,30 +55,39 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         height: 38,
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ваши проекты',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
+Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.tr(context, 'your_projects'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'Ваши предметы для перекраски',
-                              style: TextStyle(
-                                color: Colors.white54,
-                                fontSize: 13,
+                              Text(
+                                AppLocalizations.tr(
+                                    context, 'your_items_for_recoloring'),
+                                style: const TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 13,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      _circleIconBtn('assets/icons/Love.png'),
+                        const SizedBox(width: 8),
+                        _circleIconBtn('assets/icons/setings.png', onTap: () {
+                          Navigator.push(
+                            context,
+                            AppTransitions.slideRoute(
+                              const SettingsScreen(),
+                              direction: SlideDirection.left,
+                            ),
+                          );
+                        }),
                     ],
                   ),
                 ),
@@ -89,9 +100,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       builder: (context, appState, child) {
                         final projects = appState.sortedProjects;
                         if (projects.isEmpty) {
-                          return const Center(
+                          return Center(
                             child: Text(
-                              'Нет проектов',
+                              AppLocalizations.tr(context, 'no_projects'),
                               style: TextStyle(color: Colors.white54),
                             ),
                           );
@@ -216,20 +227,20 @@ child: ClipRRect(
                               color: const Color(0xFFF5C518),
                               borderRadius: BorderRadius.circular(28),
                             ),
-                            child: const Center(
-                              child: Text(
-                                'Сделать фото',
-                                style: TextStyle(
+child: Center(
+                               child: Text(
+                                 AppLocalizations.tr(context, 'take_photo'),
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black,
                                 ),
                               ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
+),
+                       const SizedBox(width: 10),
                       GestureDetector(
                         onTap: _pickFromGallery,
                         child: Container(
@@ -279,8 +290,9 @@ child: ClipRRect(
     if (!status.isGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Требуется разрешение доступа к галерее'),
+          SnackBar(
+            content: Text(AppLocalizations.tr(
+                context, 'gallery_permission_required')),
           ),
         );
       }
@@ -312,7 +324,8 @@ child: ClipRRect(
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка выбора изображения: $e')),
+          SnackBar(
+              content: Text('${AppLocalizations.tr(context, 'error_selecting_image')}: $e')),
         );
       }
     }

@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'selection_tool.dart';
 import 'dart:async';
+import '../utils/app_localizations.dart';
 
 /// Represents a saved project (edited photo) — immutable model
 @immutable
@@ -32,6 +33,15 @@ class AppState extends ChangeNotifier {
   // Current stage of the application
   AppStage _currentStage = AppStage.camera;
   AppStage get currentStage => _currentStage;
+
+  // App locale
+  AppLocale _locale = AppLocale.russian;
+  AppLocale get locale => _locale;
+
+  void toggleLocale() {
+    _locale = _locale == AppLocale.russian ? AppLocale.english : AppLocale.russian;
+    notifyListeners();
+  }
 
   // Captured image
   Uint8List? _capturedImage;

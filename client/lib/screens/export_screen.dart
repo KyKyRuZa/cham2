@@ -6,6 +6,7 @@ import 'package:gal/gal.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/app_state.dart';
+import '../utils/app_localizations.dart';
 import '../utils/transitions.dart';
 import 'projects_screen.dart';
 
@@ -19,11 +20,31 @@ class ExportScreen extends StatefulWidget {
 }
 
 class _ExportScreenState extends State<ExportScreen> {
-  // Флаг удержания кнопки сравнения
   bool _isCompareHeld = false;
+
+  String _cachedNoImage = '';
+  String _cachedNoGalleryPermission = '';
+  String _cachedPhotoSaved = '';
+  String _cachedErrorSaving = '';
+  String _cachedShareText = '';
+  String _cachedErrorSending = '';
+  String _cachedOriginal = '';
+  String _cachedRecolor = '';
+
+  void _cacheTranslations(BuildContext context) {
+    _cachedNoImage = AppLocalizations.tr(context, 'no_image');
+    _cachedNoGalleryPermission = AppLocalizations.tr(context, 'no_gallery_save_permission');
+    _cachedPhotoSaved = AppLocalizations.tr(context, 'photo_saved_to_gallery');
+    _cachedErrorSaving = AppLocalizations.tr(context, 'error_saving_to_gallery');
+    _cachedShareText = AppLocalizations.tr(context, 'share_text');
+    _cachedErrorSending = AppLocalizations.tr(context, 'error_sending');
+    _cachedOriginal = AppLocalizations.tr(context, 'original');
+    _cachedRecolor = AppLocalizations.tr(context, 'recolor');
+  }
 
   @override
   Widget build(BuildContext context) {
+    _cacheTranslations(context);
     final capturedImage = context.select<AppState, Uint8List?>((s) => s.capturedImage);
     final previewImage = context.select<AppState, Uint8List?>((s) => s.previewImage);
     final displayImage = _isCompareHeld && capturedImage != null
@@ -35,7 +56,7 @@ class _ExportScreenState extends State<ExportScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF151412),
         foregroundColor: Colors.white,
-        title: const Text('Результат'),
+        title: Text(AppLocalizations.tr(context, 'result')),
 leading: GestureDetector(
             onTap: () {
               final appState = context.read<AppState>();
@@ -105,10 +126,10 @@ actions: [
                   child: ElevatedButton.icon(
                     onPressed: () => _saveImage(context, displayImage),
                     icon: const Icon(Icons.download, size: 24),
-                    label: const Text(
-                      'Скачать',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
+                     label: Text(
+                       AppLocalizations.tr(context, 'download'),
+                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF5C518),
                       foregroundColor: Colors.black,
@@ -125,10 +146,10 @@ actions: [
                   child: ElevatedButton.icon(
                     onPressed: () => _shareImage(context, displayImage),
                     icon: const Icon(Icons.share, size: 24),
-                    label: const Text(
-                      'Отправить',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
+                     label: Text(
+                       AppLocalizations.tr(context, 'send'),
+                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF404040),
                       foregroundColor: Colors.white,
@@ -148,8 +169,8 @@ actions: [
 
   Widget _buildImageDisplay(Uint8List? displayImage) {
     if (displayImage == null) {
-      return const Center(
-        child: Text('Нет изображения', style: TextStyle(color: Colors.white)),
+      return Center(
+        child: Text(_cachedNoImage, style: const TextStyle(color: Colors.white)),
       );
     }
 
@@ -199,10 +220,10 @@ actions: [
             children: [
               Icon(Icons.compare_arrows, color: Colors.white, size: 24),
               const SizedBox(width: 8),
-              Text(
-                _isCompareHeld ? 'Оригинал' : 'Перекраска',
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+                Text(
+                  _isCompareHeld ? _cachedOriginal : _cachedRecolor,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                ),
             ],
           ),
         ),
@@ -217,10 +238,10 @@ actions: [
       if (Platform.isIOS) {
         final status = await Permission.photosAddOnly.request();
         if (status != PermissionStatus.granted && status != PermissionStatus.limited) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Нет разрешения на сохранение в галерею')),
-            );
+if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_cachedNoGalleryPermission)),
+        );
           }
           return;
         }
@@ -235,13 +256,13 @@ actions: [
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Фото сохранено в галерее')),
+          SnackBar(content: Text(_cachedPhotoSaved)),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка сохранения в галерею: $e')),
+          SnackBar(content: Text('$_cachedErrorSaving: $e')),
         );
       }
     }
@@ -257,17 +278,17 @@ actions: [
       await file.writeAsBytes(imageBytes);
       
       final xFile = XFile(file.path);
-      await Share.shareXFiles(
-        [xFile],
-        text: 'Посмотри на моё перекраска мебели!',
-      );
+        await Share.shareXFiles(
+          [xFile],
+          text: _cachedShareText,
+        );
       
       // Clean up temp file after a delay
       Future.delayed(const Duration(seconds: 30), () => file.delete());
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка отправки: $e')),
+          SnackBar(content: Text('$_cachedErrorSending: $e')),
         );
       }
     }

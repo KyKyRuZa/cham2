@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
+import '../utils/app_localizations.dart';
 
 class ColorPaletteScreen extends StatefulWidget {
   const ColorPaletteScreen({super.key});
@@ -15,105 +16,151 @@ class _ColorPaletteScreenState extends State<ColorPaletteScreen> {
 
   static const _bg = Color(0xFF151412);
 
-  final List<_ColorCategory> _colorCategories = [
-    _ColorCategory('Красный', [
-      const Color(0xFFE53935),
-      const Color(0xFFB71C1C),
-      const Color(0xFFEF9A9A),
-      const Color(0xFFFF5252),
-      const Color(0xFFD32F2F),
-    ]),
-    _ColorCategory('Оранжевый', [
-      const Color(0xFFFF6D00),
-      const Color(0xFFB33E12),
-      const Color(0xFFFFC38A),
-      const Color(0xFFF08A1E),
-      const Color(0xFFFF9800),
-    ]),
-    _ColorCategory('Желтый', [
-      const Color(0xFFFFEB3B),
-      const Color(0xFFFBC02D),
-      const Color(0xFFFFF59D),
-      const Color(0xFFF9A825),
-      const Color(0xFFFFD600),
-    ]),
-    _ColorCategory('Зеленый', [
-      const Color(0xFF4CAF50),
-      const Color(0xFF1B5E20),
-      const Color(0xFFA5D6A7),
-      const Color(0xFF66BB6A),
-      const Color(0xFF2E7D32),
-    ]),
-    _ColorCategory('Голубой', [
-      const Color(0xFF29B6F6),
-      const Color(0xFF01579B),
-      const Color(0xFFB3E5FC),
-      const Color(0xFF03A9F4),
-      const Color(0xFF0288D1),
-    ]),
-    _ColorCategory('Синий', [
-      const Color(0xFF3F51B5),
-      const Color(0xFF1A237E),
-      const Color(0xFF9FA8DA),
-      const Color(0xFF3949AB),
-      const Color(0xFF283593),
-    ]),
-    _ColorCategory('Фиолетовый', [
-      const Color(0xFF9C27B0),
-      const Color(0xFF4A148C),
-      const Color(0xFFCE93D8),
-      const Color(0xFFAB47BC),
-      const Color(0xFF7B1FA2),
-    ]),
-    _ColorCategory(
-      'Металл',
-      [
-        const Color(0xFFFFD700), // Золото
-        const Color(0xFFE0E0E0), // Серебро
-        const Color(0xFFD2691E), // Бронза
-        const Color(0xFFC9A66B), // Латунь
-        const Color(0xFF6E7478), // Титан - глубокий серо-стальной
-        const Color(0xFFE8ECEF), // Нержавейка
-        const Color(0xFFCD7F32), // Медь
-      ],
-      labels: const [
-        'Золото',
-        'Серебро',
-        'Бронза',
-        'Латунь',
-        'Титан',
-        'Нержавейка',
-        'Медь',
-      ],
-      colorNames: const [
-        'gold',
-        'silver',
-        'bronze',
-        'brass',
-        'titanium',
-        'stainless_steel',
-        'copper',
-      ],
-    ),
-    _ColorCategory(
-      'Черный / Белый',
-      [
-        const Color(0xFF000000), // Черный
-        const Color(0xFFFFFFFF), // Белый
-      ],
-      labels: const [
-        'Черный',
-        'Белый',
-      ],
-      colorNames: const [
-        'black',
-        'white',
-      ],
-    ),
-  ];
+  List<_ColorCategory>? _colorCategories;
 
-  @override
+@override
   Widget build(BuildContext context) {
+    _colorCategories = [
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_red'), [
+        const Color(0xFFE53935),
+        const Color(0xFFB71C1C),
+        const Color(0xFFEF9A9A),
+        const Color(0xFFFF5252),
+        const Color(0xFFD32F2F),
+      ]),
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_orange'), [
+        const Color(0xFFFF6D00),
+        const Color(0xFFB33E12),
+        const Color(0xFFFFC38A),
+        const Color(0xFFF08A1E),
+        const Color(0xFFFF9800),
+      ]),
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_green'), [
+        const Color(0xFF4CAF50),
+        const Color(0xFF1B5E20),
+        const Color(0xFFA5D6A7),
+        const Color(0xFF66BB6A),
+        const Color(0xFF2E7D32),
+      ]),
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_purple'), [
+        const Color(0xFF9C27B0),
+        const Color(0xFF4A148C),
+        const Color(0xFFCE93D8),
+        const Color(0xFFAB47BC),
+        const Color(0xFF7B1FA2),
+      ]),
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_blue'), [
+        const Color(0xFF3F51B5),
+        const Color(0xFF1A237E),
+        const Color(0xFF9FA8DA),
+        const Color(0xFF3949AB),
+        const Color(0xFF283593),
+      ]),
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_brown'), [
+        const Color(0xFF795548),
+        const Color(0xFF5D4037),
+        const Color(0xFF8D6E63),
+        const Color(0xFF4E342E),
+        const Color(0xFFA1887F),
+      ], labels: [
+        AppLocalizations.tr(context, 'brown'),
+        AppLocalizations.tr(context, 'dark_brown'),
+        AppLocalizations.tr(context, 'light_brown'),
+        AppLocalizations.tr(context, 'very_dark_brown'),
+        AppLocalizations.tr(context, 'muted_brown'),
+      ], colorNames: const [
+        'brown',
+        'dark brown',
+        'light brown',
+        'very dark brown',
+        'muted brown',
+      ]),
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_gray'), [
+        const Color(0xFF9E9E9E),
+        const Color(0xFF757575),
+        const Color(0xFFBDBDBD),
+        const Color(0xFF616161),
+        const Color(0xFFE0E0E0),
+      ], colorNames: const [
+        'gray',
+        'dark gray',
+        'light gray',
+        'very dark gray',
+        'very light gray',
+      ]),
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_beige'), [
+        const Color(0xFFF5F5DC),
+        const Color(0xFFFAEBD7),
+        const Color(0xFFF5DEB3),
+        const Color(0xFFFFF8DC),
+        const Color(0xFFF0E68C),
+      ], colorNames: const [
+        'beige',
+        'antique white',
+        'wheat',
+        'cornsilk',
+        'khaki',
+      ]),
+      _ColorCategory(AppLocalizations.tr(context, 'color_categories_pink'), [
+        const Color(0xFFFFC0CB),
+        const Color(0xFFFF69B4),
+        const Color(0xFFDB7093),
+        const Color(0xFFFFB6C1),
+        const Color(0xFFC71585),
+      ], colorNames: const [
+        'pink',
+        'hot pink',
+        'pale violet red',
+        'light pink',
+        'medium violet red',
+      ]),
+      _ColorCategory(
+        AppLocalizations.tr(context, 'color_categories_metal'),
+        [
+          const Color(0xFFFFD700),
+          const Color(0xFFE0E0E0),
+          const Color(0xFFD2691E),
+          const Color(0xFFC9A66B),
+          const Color(0xFF6E7478),
+          const Color(0xFFE8ECEF),
+          const Color(0xFFCD7F32),
+        ],
+        labels: [
+          AppLocalizations.tr(context, 'gold'),
+          AppLocalizations.tr(context, 'silver'),
+          AppLocalizations.tr(context, 'bronze'),
+          AppLocalizations.tr(context, 'brass'),
+          AppLocalizations.tr(context, 'titanium'),
+          AppLocalizations.tr(context, 'stainless_steel'),
+          AppLocalizations.tr(context, 'copper'),
+        ],
+        colorNames: const [
+          'gold',
+          'silver',
+          'bronze',
+          'brass',
+          'titanium',
+          'stainless_steel',
+          'copper',
+        ],
+        isMetal: true,
+      ),
+      _ColorCategory(
+        AppLocalizations.tr(context, 'color_categories_black_white'),
+        [
+          const Color(0xFF000000),
+          const Color(0xFFFFFFFF),
+        ],
+        labels: [
+          AppLocalizations.tr(context, 'black'),
+          AppLocalizations.tr(context, 'white'),
+        ],
+        colorNames: const [
+          'black',
+          'white',
+        ],
+      ),
+    ];
     final halfScreen = MediaQuery.of(context).size.height * 0.5;
     return SizedBox(
       height: halfScreen,
@@ -198,9 +245,9 @@ class _ColorPaletteScreenState extends State<ColorPaletteScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        ...List.generate(_colorCategories.length, (index) {
-          final category = _colorCategories[index];
-          final isMetal = category.name == 'Металл';
+        ...List.generate(_colorCategories!.length, (index) {
+          final category = _colorCategories![index];
+          final isMetal = category.isMetal;
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
             child: Column(
@@ -273,8 +320,8 @@ class _PatinaToggle extends StatelessWidget {
               context.read<AppState>().setPatinaMode(value);
             },
           ),
-          const Text(
-            'Устаривание',
+          Text(
+            AppLocalizations.tr(context, 'aging'),
             style: TextStyle(
               color: Colors.white,
               fontSize: 13,
@@ -382,8 +429,9 @@ class _ColorCategory {
   final List<Color> shades;
   final List<String>? labels;
   final List<String>? colorNames;
+  final bool isMetal;
 
-  _ColorCategory(this.name, this.shades, {this.labels, this.colorNames});
+  _ColorCategory(this.name, this.shades, {this.labels, this.colorNames, this.isMetal = false});
 }
 
 class _PaletteIconInFrame extends StatelessWidget {

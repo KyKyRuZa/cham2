@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import '../models/app_state.dart';
+import '../utils/app_localizations.dart';
 import '../utils/transitions.dart';
 import 'editor_screen.dart';
 import 'projects_screen.dart';
@@ -52,12 +54,18 @@ class _CameraPageState extends State<CameraPage> {
   double _minZoom = 1.0;
   double _maxZoom = 4.0;
 
+  double _getPreviewRotation() {
+    return 0;
+  }
+
   Future<void> _initializeCamera([int? cameraIndex]) async {
     PermissionStatus cameraStatus = await Permission.camera.request();
     if (!cameraStatus.isGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Камера требует разрешения')),
+          SnackBar(
+              content: Text(AppLocalizations.tr(
+                  context, 'camera_requires_permission'))),
         );
       }
       return;
@@ -107,7 +115,9 @@ class _CameraPageState extends State<CameraPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка камеры: $e')));
+        ).showSnackBar(SnackBar(
+            content: Text(
+                '${AppLocalizations.tr(context, 'camera_error')}: $e')));
       }
     }
   }
@@ -116,7 +126,9 @@ class _CameraPageState extends State<CameraPage> {
     if (_cameras == null || _cameras!.length < 2) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Переключение камеры недоступно')),
+          SnackBar(
+              content: Text(AppLocalizations.tr(
+                  context, 'camera_switch_unavailable'))),
         );
       }
       return;
@@ -286,7 +298,10 @@ class _CameraPageState extends State<CameraPage> {
                         }
                       },
                       onScaleEnd: (details) {},
-                      child: CameraPreview(_cameraController!),
+                      child: Transform.rotate(
+                        angle: _getPreviewRotation(),
+                        child: CameraPreview(_cameraController!),
+                      )
                     )
                   : const SizedBox.expand(),
             ),
@@ -460,8 +475,9 @@ child: Center(
     if (!status.isGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Требуется разрешение доступа к галерее'),
+          SnackBar(
+            content: Text(AppLocalizations.tr(
+                context, 'gallery_permission_required')),
           ),
         );
       }
@@ -512,7 +528,9 @@ child: Center(
       debugPrint('Error picking image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка выбора изображения: $e')),
+          SnackBar(
+              content: Text(
+                  '${AppLocalizations.tr(context, 'error_selecting_image')}: $e')),
         );
       }
     }

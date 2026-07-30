@@ -124,8 +124,13 @@ class _NativeVideoState extends State<_NativeVideo> {
     }
     return SizedBox(
       width: 420,
-      height: 420,
-      child: VideoPlayer(controller),
+      child: AspectRatio(
+        aspectRatio: controller.value.aspectRatio,
+        child: Container(
+          color: Colors.transparent,
+          child: VideoPlayer(controller),
+        ),
+      ),
     );
   }
 }

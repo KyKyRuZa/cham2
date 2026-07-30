@@ -8,6 +8,7 @@ import '../widgets/selection_canvas.dart';
 import '../services/segmentation_service.dart';
 import 'color_palette_screen.dart';
 import 'material_selection_screen.dart';
+import '../utils/app_localizations.dart';
 import '../utils/transitions.dart';
 import 'camera_page.dart';
 import 'export_screen.dart';
@@ -146,9 +147,9 @@ class _EditorScreenState extends State<EditorScreen>
           Consumer<AppState>(
             builder: (context, appState, child) {
               if (!appState.isLoading) return const SizedBox.shrink();
-              return const VideoLoadingOverlay(
+              return VideoLoadingOverlay(
                 visible: true,
-                message: 'AI перекраска...',
+                message: AppLocalizations.tr(context, 'ai_recoloring'),
               );
             },
           ),
@@ -210,7 +211,7 @@ class _EditorScreenState extends State<EditorScreen>
                     assetPath: 'assets/icons/Paint Palette.png',
                     size: 48,
                   ),
-                  label: 'Палитра',
+                  label: AppLocalizations.tr(context, 'palette'),
                   onTap: () => _showColorPalette(context),
                 ),
                 const SizedBox(width: 36),
@@ -234,7 +235,7 @@ class _EditorScreenState extends State<EditorScreen>
                     assetPath: 'assets/icons/Diagonal Lines.png',
                     size: 48,
                   ),
-                  label: 'Материал',
+                  label: AppLocalizations.tr(context, 'material'),
                   onTap: () => _showMaterialSelection(context),
                 ),
               ],
@@ -304,12 +305,12 @@ class _EditorScreenState extends State<EditorScreen>
               children: [
                 Expanded(
                   child: Center(
-                    child: Text('Лёгкая', style: labelStyle(!complex)),
+                    child: Text(AppLocalizations.tr(context, 'easy'), style: labelStyle(!complex)),
                   ),
                 ),
                 Expanded(
                   child: Center(
-                    child: Text('Сложная', style: labelStyle(complex)),
+                    child: Text(AppLocalizations.tr(context, 'complex'), style: labelStyle(complex)),
                   ),
                 ),
               ],
@@ -462,14 +463,16 @@ final resultBytes = await _segmentationService.segmentObject(
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Ошибка AI перекраски')));
+        ).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.tr(
+                context, 'ai_recolor_error'))));
       }
     } catch (e) {
       debugPrint('Ошибка AI: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка AI: $e')));
+        ).showSnackBar(SnackBar(content: Text('${AppLocalizations.tr(context, 'ai_error')}: $e')));
       }
     } finally {
       _isProcessing = false;
@@ -543,8 +546,8 @@ final resultBytes = await _segmentationService.segmentObject(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Цвет выбран пипеткой',
+                  Text(
+                    AppLocalizations.tr(context, 'color_picked_with_eyedropper'),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -797,8 +800,8 @@ class _EyedropperButton extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            'Пипетка',
+            Text(
+              AppLocalizations.tr(context, 'eyedropper'),
             style: TextStyle(
               color: isSelected ? fabOrange : Colors.white70,
               fontSize: 13,

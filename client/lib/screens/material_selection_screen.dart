@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
+import '../utils/app_localizations.dart';
 
 class MaterialSelectionScreen extends StatefulWidget {
   const MaterialSelectionScreen({super.key});
@@ -10,22 +11,13 @@ class MaterialSelectionScreen extends StatefulWidget {
 }
 
 class _MaterialSelectionScreenState extends State<MaterialSelectionScreen> {
-  late String _selectedMaterial;
+  String _selectedMaterial = '';
   bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
     _selectedMaterial = 'wood';
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _selectedMaterial = context.read<AppState>().selectedMaterial;
-      _initialized = true;
-    }
   }
 
   static const _bg = Color(0xFF151412);
@@ -35,20 +27,25 @@ class _MaterialSelectionScreenState extends State<MaterialSelectionScreen> {
   static const _textSecondary = Colors.white70;
   static const _border = Colors.white12;
 
-  final Map<String, String> _materialLabels = {
-    'wood': 'Дерево',
-    'metal': 'Металл',
-    'plastic': 'Пластик',
-    'fabric': 'Ткань',
-    'glass': 'Стекло',
-    'leather': 'Кожа',
-    'ceramic': 'Керамика',
-    'concrete': 'Бетон',
-    'no_texture': 'Без текстуры',
-  };
+  Map<String, String> _materialLabels = {};
 
   @override
   Widget build(BuildContext context) {
+    if (!_initialized) {
+      _selectedMaterial = context.select<AppState, String>((s) => s.selectedMaterial);
+      _initialized = true;
+    }
+    _materialLabels = {
+      'wood': AppLocalizations.tr(context, 'wood'),
+      'metal': AppLocalizations.tr(context, 'metal'),
+      'plastic': AppLocalizations.tr(context, 'plastic'),
+      'fabric': AppLocalizations.tr(context, 'fabric'),
+      'glass': AppLocalizations.tr(context, 'glass'),
+      'leather': AppLocalizations.tr(context, 'leather'),
+      'ceramic': AppLocalizations.tr(context, 'ceramic'),
+      'concrete': AppLocalizations.tr(context, 'concrete'),
+      'no_texture': AppLocalizations.tr(context, 'no_texture'),
+    };
     return Container(
       decoration: const BoxDecoration(
         color: _bg,
@@ -107,8 +104,8 @@ class _MaterialSelectionScreenState extends State<MaterialSelectionScreen> {
               child: const Icon(Icons.arrow_back, color: _textPrimary, size: 22),
             ),
           ),
-          const Text(
-            'Выбор материала',
+          Text(
+            AppLocalizations.tr(context, 'material_selection'),
             style: TextStyle(
               color: _textPrimary,
               fontSize: 18,

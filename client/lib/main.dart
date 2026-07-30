@@ -9,6 +9,7 @@ import 'screens/editor_screen.dart';
 import 'screens/color_picker_screen.dart';
 import 'screens/color_palette_screen.dart';
 import 'screens/export_screen.dart';
+import 'screens/settings_screen.dart';
 import 'utils/transitions.dart';
 
 void main() async {
@@ -140,6 +141,11 @@ case '/color_picker':
               const ExportScreen(),
               direction: SlideDirection.up,
               curve: Curves.easeOutCubic,
+            );
+          case '/settings':
+            return AppTransitions.slideRoute(
+              const SettingsScreen(),
+              direction: SlideDirection.left,
             );
           default:
             return AppTransitions.fadeRoute(

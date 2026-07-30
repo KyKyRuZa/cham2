@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/selection_tool.dart';
+import '../utils/app_localizations.dart';
 
 class ToolBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final SelectionTool currentTool;
@@ -80,9 +81,9 @@ class _PreviewToolbar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _PreviewActionButton(icon: Icons.edit, label: 'Редактировать', onTap: onCancelPreview),
-          _PreviewActionButton(icon: Icons.color_lens, label: 'Цвет', onTap: onColorPick),
-          _PreviewActionButton(icon: Icons.save, label: 'Сохранить', onTap: onSave),
+          _PreviewActionButton(icon: Icons.edit, label: AppLocalizations.tr(context, 'edit'), onTap: onCancelPreview),
+          _PreviewActionButton(icon: Icons.color_lens, label: AppLocalizations.tr(context, 'color'), onTap: onColorPick),
+          _PreviewActionButton(icon: Icons.save, label: AppLocalizations.tr(context, 'save'), onTap: onSave),
         ],
       ),
     );
@@ -331,26 +332,26 @@ class _ActionButtonsRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text('Цвет', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                  Text(AppLocalizations.tr(context, 'color'), style: const TextStyle(color: Colors.white70, fontSize: 10)),
                 ],
               ),
             ),
           ),
           _AnimatedActionButton(
             icon: Icons.preview,
-            label: 'Превью',
+            label: AppLocalizations.tr(context, 'preview'),
             onTap: hasSelection ? onPreview : null,
             enabled: hasSelection,
           ),
           _AnimatedActionButton(
             icon: Icons.refresh,
-            label: 'Сброс',
+            label: AppLocalizations.tr(context, 'reset'),
             onTap: hasSelection ? onReset : null,
             enabled: hasSelection,
           ),
           _AnimatedActionButton(
             icon: Icons.save,
-            label: 'Сохранить',
+            label: AppLocalizations.tr(context, 'save'),
             onTap: hasSelection ? onSave : null,
             enabled: hasSelection,
           ),
@@ -428,7 +429,7 @@ class BrushSizeSlider extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Text('Размер кисти:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(AppLocalizations.tr(context, 'brush_size'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
               Expanded(
                 child: Slider(
                   value: brushSize,
