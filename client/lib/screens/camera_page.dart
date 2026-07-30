@@ -55,7 +55,17 @@ class _CameraPageState extends State<CameraPage> {
   double _maxZoom = 4.0;
 
   double _getPreviewRotation() {
-    return 0;
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    switch (view.physicalOrientation) {
+      case PhysicalOrientation.landscapeLeft:
+        return pi / 2;
+      case PhysicalOrientation.landscapeRight:
+        return -pi / 2;
+      case PhysicalOrientation.portraitUpsideDown:
+        return pi;
+      default:
+        return 0;
+    }
   }
 
   Future<void> _initializeCamera([int? cameraIndex]) async {
@@ -256,7 +266,6 @@ class _CameraPageState extends State<CameraPage> {
     super.initState();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
     ]);
     _initializeCamera();
   }

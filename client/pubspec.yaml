@@ -52,10 +52,7 @@ dependencies:
   # HTTP parser for multipart requests
   http_parser: ^4.1.2
 
-  # Video playback for loading screen (iOS transparent video)
-  video_player: ^2.9.0
-
-  # WebView for transparent video on Android (VP9 alpha in WebM)
+  # WebView for transparent video (WebM + VP9 alpha) on all platforms
   webview_flutter: ^4.10.0
   webview_flutter_android: ^4.0.0
   flutter_dotenv: ^6.0.1
@@ -114,6 +111,5 @@ flutter:
     - assets/metall/Rectangle 865.png
     - assets/textures/wood1.png
     - assets/textures/wood2.png
-    - assets/zagruuuuzka.mov
     - assets/zagruuuuzka.webm
     - assets/loading_overlay.html
