@@ -73,22 +73,9 @@ class TransparentVideoPlayerFactory: NSObject, FlutterPlatformViewFactory {
     super.init()
   }
 
-  // Основной метод для старых версий Flutter
   func create(
     withViewId viewId: Int64,
     args: Any?
-  ) -> FlutterPlatformView {
-    let frame = CGRect(x: 0, y: 0, width: 420, height: 420)
-    let argsMap = args as? [String: Any]
-    return TransparentVideoPlayerView(frame: frame, viewId: viewId, args: argsMap)
-  }
-
-  // Дополнительный метод для новых версий Flutter
-  @available(iOS, introduced: 13.0)
-  func create(
-    withViewId viewId: Int64,
-    args: Any?,
-    context: Any?
   ) -> FlutterPlatformView {
     let frame = CGRect(x: 0, y: 0, width: 420, height: 420)
     let argsMap = args as? [String: Any]
