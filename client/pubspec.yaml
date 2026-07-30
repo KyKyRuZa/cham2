@@ -44,7 +44,6 @@ dependencies:
   share_plus: ^13.2.0
 
   # Save image to gallery
-  gallery_saver: ^2.3.2
 
   # HTTP client for server communication
   http: ^0.13.6
