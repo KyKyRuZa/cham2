@@ -54,19 +54,7 @@ class _CameraPageState extends State<CameraPage> {
   double _minZoom = 1.0;
   double _maxZoom = 4.0;
 
-  double _getPreviewRotation() {
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
-    switch (view.physicalOrientation) {
-      case PhysicalOrientation.landscapeLeft:
-        return pi / 2;
-      case PhysicalOrientation.landscapeRight:
-        return -pi / 2;
-      case PhysicalOrientation.portraitUpsideDown:
-        return pi;
-      default:
-        return 0;
-    }
-  }
+  
 
   Future<void> _initializeCamera([int? cameraIndex]) async {
     PermissionStatus cameraStatus = await Permission.camera.request();
@@ -305,13 +293,10 @@ class _CameraPageState extends State<CameraPage> {
                           setState(() => _selectedZoom = newZoom);
                           _scheduleZoom(newZoom);
                         }
-                      },
-                      onScaleEnd: (details) {},
-                      child: Transform.rotate(
-                        angle: _getPreviewRotation(),
-                        child: CameraPreview(_cameraController!),
-                      )
-                    )
+},
+                       onScaleEnd: (details) {},
+                       child: CameraPreview(_cameraController!),
+                     )
                   : const SizedBox.expand(),
             ),
           ),
