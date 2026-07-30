@@ -9,14 +9,14 @@ import AVFoundation
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     window?.backgroundColor = .clear
-    
+
     let controller = window?.rootViewController as! FlutterViewController
     let factory = TransparentVideoPlayerFactory(messenger: controller.binaryMessenger)
     let registrar = controller.registrar(forPlugin: "transparent_video_player")!
     registrar.register(factory, withId: "transparent_video_player")
-    
+
     GeneratedPluginRegistrant.register(with: controller)
-    
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
@@ -24,6 +24,7 @@ import AVFoundation
 class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
   private let playerLayer: AVPlayerLayer
   private let containerView: UIView
+  private var player: AVPlayer?
 
   init(frame: CGRect, viewId: Int64, args: [String: Any]?) {
     self.playerLayer = AVPlayerLayer()
@@ -33,7 +34,7 @@ class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
     containerView.backgroundColor = .clear
     containerView.isOpaque = false
 
-    playerLayer.frame = frame
+    playerLayer.frame = containerView.bounds
     playerLayer.videoGravity = .resizeAspect
     playerLayer.backgroundColor = UIColor.clear.cgColor
     containerView.layer.addSublayer(playerLayer)
@@ -41,6 +42,7 @@ class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
     if let path = args?["path"] as? String,
        let url = URL(string: path) {
       let player = AVPlayer(url: url)
+      self.player = player
       playerLayer.player = player
       player.actionAtItemEnd = .none
       player.play()
@@ -74,10 +76,10 @@ class TransparentVideoPlayerFactory: NSObject, FlutterPlatformViewFactory {
   }
 
   func create(
-    withViewId viewId: Int64,
-    args: Any?
+    withFrame frame: CGRect,
+    viewIdentifier viewId: Int64,
+    arguments args: Any?
   ) -> FlutterPlatformView {
-    let frame = CGRect(x: 0, y: 0, width: 420, height: 420)
     let argsMap = args as? [String: Any]
     return TransparentVideoPlayerView(frame: frame, viewId: viewId, args: argsMap)
   }
