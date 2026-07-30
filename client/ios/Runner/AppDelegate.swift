@@ -10,7 +10,6 @@ import AVFoundation
   ) -> Bool {
     window?.backgroundColor = .clear
     
-    // Регистрируем плагины ДО того, как вызовем super
     let controller = window?.rootViewController as! FlutterViewController
     let factory = TransparentVideoPlayerFactory(messenger: controller.binaryMessenger)
     let registrar = controller.registrar(forPlugin: "transparent_video_player")!
@@ -24,43 +23,41 @@ import AVFoundation
 
 class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
   private let playerLayer: AVPlayerLayer
-  private let view: UIView
+  private let containerView: UIView
 
   init(frame: CGRect, viewId: Int64, args: [String: Any]?) {
     self.playerLayer = AVPlayerLayer()
-    self.view = UIView(frame: frame)
+    self.containerView = UIView(frame: frame)
     super.init()
 
-    view.backgroundColor = .clear
-    view.isOpaque = false
+    containerView.backgroundColor = .clear
+    containerView.isOpaque = false
 
     playerLayer.frame = frame
     playerLayer.videoGravity = .resizeAspect
     playerLayer.backgroundColor = UIColor.clear.cgColor
-    view.layer.addSublayer(playerLayer)
+    containerView.layer.addSublayer(playerLayer)
 
-    guard let path = args?["path"] as? String,
-          let url = URL(fileURLWithPath: path) else {
-      return
-    }
+    if let path = args?["path"] as? String,
+       let url = URL(string: path) {
+      let player = AVPlayer(url: url)
+      playerLayer.player = player
+      player.actionAtItemEnd = .none
+      player.play()
 
-    let player = AVPlayer(url: url)
-    playerLayer.player = player
-    player.actionAtItemEnd = .none
-    player.play()
-
-    NotificationCenter.default.addObserver(
-      forName: .AVPlayerItemDidPlayToEndTime,
-      object: player.currentItem,
-      queue: .main
-    ) { [weak player] _ in
-      player?.seek(to: .zero)
-      player?.play()
+      NotificationCenter.default.addObserver(
+        forName: .AVPlayerItemDidPlayToEndTime,
+        object: player.currentItem,
+        queue: .main
+      ) { [weak player] _ in
+        player?.seek(to: .zero)
+        player?.play()
+      }
     }
   }
 
   func view() -> UIView {
-    return view
+    return containerView
   }
 
   deinit {
