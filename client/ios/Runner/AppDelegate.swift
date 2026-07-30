@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import AVFoundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -8,10 +9,83 @@ import UIKit
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     window?.backgroundColor = .clear
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    let didLaunch = super.application(application, didFinishLaunchingWithOptions: launchOptions)
+
+    if let controller = window?.rootViewController as? FlutterViewController {
+      let factory = TransparentVideoPlayerFactory(messenger: controller.binaryMessenger)
+      let registrar = self.registrar(forPlugin: "transparent_video_player")
+      registrar?.register(viewFactory: factory, withId: "transparent_video_player")
+    }
+
+    return didLaunch
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+  }
+}
+
+class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
+  private let playerLayer: AVPlayerLayer
+  private let view: UIView
+
+  init(frame: CGRect, viewId: Int64, args: [String: Any]?) {
+    self.playerLayer = AVPlayerLayer()
+    self.view = UIView(frame: frame)
+    super.init()
+
+    view.backgroundColor = .clear
+    view.isOpaque = false
+
+    playerLayer.frame = frame
+    playerLayer.videoGravity = .resizeAspect
+    playerLayer.backgroundColor = UIColor.clear.cgColor
+    view.layer.addSublayer(playerLayer)
+
+    guard let path = args?["path"] as? String,
+          let url = URL(fileURLWithPath: path) else {
+      return
+    }
+
+    let player = AVPlayer(url: url)
+    playerLayer.player = player
+    player.actionAtItemEnd = .none
+    player.play()
+
+    NotificationCenter.default.addObserver(
+      forName: .AVPlayerItemDidPlayToEndTime,
+      object: player.currentItem,
+      queue: .main
+    ) { [weak player] _ in
+      player?.seek(to: .zero)
+      player?.play()
+    }
+  }
+
+  func view() -> UIView {
+    return view
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(self)
+  }
+}
+
+class TransparentVideoPlayerFactory: NSObject, FlutterPlatformViewFactory {
+  private let messenger: FlutterBinaryMessenger
+
+  init(messenger: FlutterBinaryMessenger) {
+    self.messenger = messenger
+    super.init()
+  }
+
+  func create(withViewId viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
+    let frame = CGRect(x: 0, y: 0, width: 420, height: 420)
+    let argsMap = args as? [String: Any]
+    return TransparentVideoPlayerView(frame: frame, viewId: viewId, args: argsMap)
+  }
+
+  func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+    return FlutterStandardMessageCodec.sharedInstance()
   }
 }
