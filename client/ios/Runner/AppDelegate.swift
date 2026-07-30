@@ -3,25 +3,22 @@ import UIKit
 import AVFoundation
 
 @main
-@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+@objc class AppDelegate: FlutterAppDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     window?.backgroundColor = .clear
-    let didLaunch = super.application(application, didFinishLaunchingWithOptions: launchOptions)
-
-    if let controller = window?.rootViewController as? FlutterViewController {
-      let factory = TransparentVideoPlayerFactory(messenger: controller.binaryMessenger)
-      let registrar = self.registrar(forPlugin: "transparent_video_player")
-      registrar?.register(viewFactory: factory, withId: "transparent_video_player")
-    }
-
-    return didLaunch
-  }
-
-  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
-    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    
+    // Регистрируем плагины ДО того, как вызовем super
+    let controller = window?.rootViewController as! FlutterViewController
+    let factory = TransparentVideoPlayerFactory(messenger: controller.binaryMessenger)
+    let registrar = controller.registrar(forPlugin: "transparent_video_player")!
+    registrar.register(factory, withId: "transparent_video_player")
+    
+    GeneratedPluginRegistrant.register(with: controller)
+    
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
 
@@ -79,7 +76,10 @@ class TransparentVideoPlayerFactory: NSObject, FlutterPlatformViewFactory {
     super.init()
   }
 
-  func create(withViewId viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
+  func create(
+    withViewId viewId: Int64,
+    args: Any?
+  ) -> FlutterPlatformView {
     let frame = CGRect(x: 0, y: 0, width: 420, height: 420)
     let argsMap = args as? [String: Any]
     return TransparentVideoPlayerView(frame: frame, viewId: viewId, args: argsMap)
