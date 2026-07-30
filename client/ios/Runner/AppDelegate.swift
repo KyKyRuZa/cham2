@@ -75,7 +75,8 @@ class TransparentVideoPlayerFactory: NSObject, FlutterPlatformViewFactory {
 
   func create(
     withViewId viewId: Int64,
-    args: Any?
+    args: Any?,
+    context: FlutterPlatformViewCreationContext?
   ) -> FlutterPlatformView {
     let frame = CGRect(x: 0, y: 0, width: 420, height: 420)
     let argsMap = args as? [String: Any]
