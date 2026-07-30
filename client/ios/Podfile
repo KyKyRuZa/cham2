@@ -1,9 +1,5 @@
-cd /Users/samatgalimov/Documents/cham2/client
-
-cat > ios/Podfile << 'EOF'
 platform :ios, '13.0'
 
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
@@ -44,4 +40,3 @@ post_install do |installer|
     end
   end
 end
-EOF
