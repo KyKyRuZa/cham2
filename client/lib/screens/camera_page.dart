@@ -279,22 +279,22 @@ class _CameraPageState extends State<CameraPage> {
             child: AspectRatio(
               aspectRatio: 9 / 16,
               child: _isCameraInitialized && _cameraController != null
-                ? GestureDetector(
-                    onScaleStart: (details) {
-                      _baseZoom = _selectedZoom;
-                    },
-                    onScaleUpdate: (details) {
-                      if (details.pointerCount == 2) {
-                        final newZoom = (_baseZoom * details.scale)
-                            .clamp(_minZoom, _maxZoom);
-                        setState(() => _selectedZoom = newZoom);
-                        _scheduleZoom(newZoom);
-                      }
-                    },
-                    onScaleEnd: (details) {},
-                    child: CameraPreview(_cameraController!),
-                  )
-                : const SizedBox.expand(),
+                  ? GestureDetector(
+                      onScaleStart: (details) {
+                        _baseZoom = _selectedZoom;
+                      },
+                      onScaleUpdate: (details) {
+                        if (details.pointerCount == 2) {
+                          final newZoom = (_baseZoom * details.scale)
+                              .clamp(_minZoom, _maxZoom);
+                          setState(() => _selectedZoom = newZoom);
+                          _scheduleZoom(newZoom);
+                        }
+                      },
+                      onScaleEnd: (details) {},
+                      child: CameraPreview(_cameraController!),
+                    )
+                  : const SizedBox.expand(),
             ),
           ),
           // Manual focus overlay - tappable anywhere for manual focus
