@@ -8,14 +8,12 @@ import AVFoundation
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    window?.backgroundColor = .clear
+    GeneratedPluginRegistrant.register(with: self)
 
-    let controller = window?.rootViewController as! FlutterViewController
-    let factory = TransparentVideoPlayerFactory(messenger: controller.binaryMessenger)
-    let registrar = controller.registrar(forPlugin: "transparent_video_player")!
-    registrar.register(factory, withId: "transparent_video_player")
-
-    GeneratedPluginRegistrant.register(with: controller)
+    if let registrar = self.registrar(forPlugin: "transparent_video_player") {
+      let factory = TransparentVideoPlayerFactory(messenger: registrar.messenger())
+      registrar.register(factory, withId: "transparent_video_player")
+    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
