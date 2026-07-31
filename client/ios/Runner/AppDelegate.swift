@@ -17,6 +17,13 @@ import AVFoundation
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+
+  override func application(
+    _ application: UIApplication,
+    supportedInterfaceOrientationsFor window: UIWindow?
+  ) -> UIInterfaceOrientationMask {
+    return .portrait
+  }
 }
 
 class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
