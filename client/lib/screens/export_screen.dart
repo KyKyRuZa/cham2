@@ -57,7 +57,7 @@ class _ExportScreenState extends State<ExportScreen> {
         backgroundColor: const Color(0xFF151412),
         foregroundColor: Colors.white,
         title: Text(AppLocalizations.tr(context, 'result')),
-leading: GestureDetector(
+        leading: GestureDetector(
             onTap: () {
               final appState = context.read<AppState>();
               appState.setPreviewImage(null);
@@ -77,7 +77,7 @@ leading: GestureDetector(
             child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
           ),
         ),
-actions: [
+        actions: [
             GestureDetector(
               onTap: () {
                 context.read<AppState>().setCapturedImage(null);
