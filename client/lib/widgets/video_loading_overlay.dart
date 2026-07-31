@@ -105,9 +105,11 @@ class _WebmVideoState extends State<_WebmVideo> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final side = size.shortestSide * 0.55;
     return SizedBox(
-      width: 420,
-      height: 470,
+      width: side,
+      height: side,
       child: WebViewWidget(controller: _controller),
     );
   }
@@ -137,9 +139,11 @@ class _NativeTransparentVideoState extends State<_NativeTransparentVideo> {
       future: _videoPathFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const SizedBox.shrink();
+        final size = MediaQuery.of(context).size;
+        final side = size.shortestSide * 0.55;
         return SizedBox(
-          width: 420,
-          height: 420,
+          width: side,
+          height: side,
           child: UiKitView(
             viewType: 'transparent_video_player',
             creationParams: {'path': snapshot.data!},

@@ -258,7 +258,6 @@ class _CameraPageState extends State<CameraPage> {
 
   @override
   void dispose() {
-    SystemChrome.setPreferredOrientations([]);
     if (_isFlashOn && _cameraController != null) {
       try {
         _cameraController!.setFlashMode(FlashMode.off);

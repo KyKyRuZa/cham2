@@ -23,6 +23,7 @@ class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
   private let playerLayer: AVPlayerLayer
   private let containerView: UIView
   private var player: AVPlayer?
+  private var playerItemContext = 0
 
   init(frame: CGRect, viewId: Int64, args: [String: Any]?) {
     self.playerLayer = AVPlayerLayer()
@@ -31,27 +32,44 @@ class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
 
     containerView.backgroundColor = .clear
     containerView.isOpaque = false
+    containerView.layer.masksToBounds = false
 
     playerLayer.frame = containerView.bounds
     playerLayer.videoGravity = .resizeAspect
     playerLayer.backgroundColor = UIColor.clear.cgColor
+    playerLayer.isOpaque = false
     containerView.layer.addSublayer(playerLayer)
 
-    if let path = args?["path"] as? String,
-       let url = URL(string: path) {
-      let player = AVPlayer(url: url)
+    if let path = args?["path"] as? String {
+      let url = URL(fileURLWithPath: path)
+      let playerItem = AVPlayerItem(url: url)
+      let player = AVPlayer(playerItem: playerItem)
       self.player = player
       playerLayer.player = player
       player.actionAtItemEnd = .none
-      player.play()
+
+      playerItem.addObserver(
+        self,
+        forKeyPath: "status",
+        options: [.old, .new],
+        context: &playerItemContext
+      )
 
       NotificationCenter.default.addObserver(
         forName: .AVPlayerItemDidPlayToEndTime,
-        object: player.currentItem,
+        object: playerItem,
         queue: .main
       ) { [weak player] _ in
         player?.seek(to: .zero)
         player?.play()
+      }
+
+      NotificationCenter.default.addObserver(
+        forName: .AVPlayerItemFailedToPlayToEndTime,
+        object: playerItem,
+        queue: .main
+      ) { notification in
+        debugPrint("Transparent video failed: \(notification)")
       }
     }
   }
@@ -60,7 +78,25 @@ class TransparentVideoPlayerView: NSObject, FlutterPlatformView {
     return containerView
   }
 
+  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+    guard context == &playerItemContext else {
+      super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+      return
+    }
+
+    guard let item = object as? AVPlayerItem, keyPath == "status" else { return }
+    if item.status == .readyToPlay {
+      player?.seek(to: .zero)
+      player?.play()
+    } else if item.status == .failed {
+      debugPrint("Transparent video item error: \(String(describing: item.error))")
+    }
+  }
+
   deinit {
+    if let item = player?.currentItem {
+      item.removeObserver(self, forKeyPath: "status", context: &playerItemContext)
+    }
     NotificationCenter.default.removeObserver(self)
   }
 }
