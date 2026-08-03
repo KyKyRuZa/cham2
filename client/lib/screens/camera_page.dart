@@ -1,50 +1,20 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image/image.dart' as img;
 import '../models/app_state.dart';
 import '../utils/app_localizations.dart';
+import '../utils/image_utils.dart';
 import '../utils/transitions.dart';
 import 'editor_screen.dart';
 import 'projects_screen.dart';
 
-Uint8List _fixImageOrientation(Uint8List bytes) {
-  try {
-    img.Image? decoded = img.decodeImage(bytes);
-    if (decoded == null) return bytes;
-
-    decoded = img.bakeOrientation(decoded);
-    return Uint8List.fromList(img.encodeJpg(decoded));
-  } catch (e) {
-    debugPrint('Orientation fix error: $e');
-    return bytes;
-  }
-}
-
-Future<Uint8List> _fixImageOrientationAsync(Uint8List bytes) {
-  return compute(_fixImageOrientation, bytes);
-}
-
-Uint8List _rotateBytesIfLandscape(Uint8List bytes) {
-  try {
-    final view = PlatformDispatcher.instance.views.first;
-    final physicalSize = view.physicalSize;
-    if (physicalSize.width <= physicalSize.height) return bytes;
-
-    final img.Image? decoded = img.decodeImage(bytes);
-    if (decoded == null) return bytes;
-
-    final rotated = img.copyRotate(decoded, angle: 90);
-    return Uint8List.fromList(img.encodeJpg(rotated));
-  } catch (e) {
-    debugPrint('Landscape rotation error: $e');
-    return bytes;
-  }
+Future<Uint8List> _normalizeImageBytes(Uint8List bytes) async {
+  return Future.value(normalizeImageBytes(bytes));
 }
 
 class CameraPage extends StatefulWidget {
@@ -67,13 +37,18 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   double _minZoom = 1.0;
   double _maxZoom = 4.0;
   bool _isLandscape = false;
+  bool _isNativeCameraOpen = false;
+
+  bool get _isIOS => Theme.of(context).platform == TargetPlatform.iOS;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _updateOrientation();
-    _initializeCamera();
+    if (!_isIOS) {
+      _initializeCamera();
+    }
   }
 
   @override
@@ -209,6 +184,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   Future<void> _takePicture() async {
+    if (_isIOS) {
+      await _openNativeCamera();
+      return;
+    }
+
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return;
     }
@@ -220,8 +200,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       if (!mounted) return;
 
       final appState = context.read<AppState>();
-      final orientedBytes = _rotateBytesIfLandscape(bytes);
-      appState.setCapturedImage(orientedBytes);
+      final normalizedBytes = await _normalizeImageBytes(bytes);
+      appState.setCapturedImage(normalizedBytes);
       Navigator.push(
         context,
         AppTransitions.slideRoute(
@@ -230,14 +210,69 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           duration: const Duration(milliseconds: 180),
         ),
       );
-
-      _fixImageOrientationAsync(orientedBytes).then((fixed) {
-        if (!identical(fixed, orientedBytes)) {
-          appState.setCapturedImage(fixed);
-        }
-      });
     } catch (e) {
       debugPrint('Error taking picture: $e');
+    }
+  }
+
+  Future<void> _openNativeCamera() async {
+    if (_isNativeCameraOpen) return;
+    setState(() => _isNativeCameraOpen = true);
+
+    PermissionStatus cameraStatus = await Permission.camera.request();
+    if (!cameraStatus.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(AppLocalizations.tr(
+                  context, 'camera_requires_permission'))),
+        );
+      }
+      setState(() => _isNativeCameraOpen = false);
+      return;
+    }
+
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        imageQuality: 100,
+      );
+
+      if (!mounted) {
+        setState(() => _isNativeCameraOpen = false);
+        return;
+      }
+
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        debugPrint('Native camera image: ${bytes.length} bytes');
+
+        final appState = context.read<AppState>();
+        final normalizedBytes = await _normalizeImageBytes(bytes);
+        appState.setCapturedImage(normalizedBytes);
+        Navigator.push(
+          context,
+          AppTransitions.slideRoute(
+            const EditorScreen(),
+            direction: SlideDirection.left,
+            duration: const Duration(milliseconds: 180),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error opening native camera: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  '${AppLocalizations.tr(context, 'camera_error')}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isNativeCameraOpen = false);
+      }
     }
   }
 
@@ -296,36 +331,38 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       backgroundColor: const Color(0xFF151412),
       body: Stack(
         children: [
-          SizedBox.expand(
-            child: _isCameraInitialized && _cameraController != null
-                ? RotatedBox(
-                    quarterTurns: _isLandscape ? 1 : 0,
-                    child: GestureDetector(
-                      onScaleStart: (details) {
-                        _baseZoom = _selectedZoom;
-                      },
-                      onScaleUpdate: (details) {
-                        if (details.pointerCount == 2) {
-                          final newZoom = (_baseZoom * details.scale)
-                              .clamp(_minZoom, _maxZoom);
-                          setState(() => _selectedZoom = newZoom);
-                          _scheduleZoom(newZoom);
-                        }
-                      },
-                      onScaleEnd: (details) {},
-                      child: CameraPreview(_cameraController!),
-                    ),
-                  )
-                : const SizedBox.expand(),
-          ),
-          Positioned.fill(
-            child: GestureDetector(
-              onTapDown: (details) => _onCameraTap(details),
-              behavior: HitTestBehavior.translucent,
-              child: const SizedBox(),
+          if (!_isIOS)
+            SizedBox.expand(
+              child: _isCameraInitialized && _cameraController != null
+                  ? RotatedBox(
+                      quarterTurns: _isLandscape ? 1 : 0,
+                      child: GestureDetector(
+                        onScaleStart: (details) {
+                          _baseZoom = _selectedZoom;
+                        },
+                        onScaleUpdate: (details) {
+                          if (details.pointerCount == 2) {
+                            final newZoom = (_baseZoom * details.scale)
+                                .clamp(_minZoom, _maxZoom);
+                            setState(() => _selectedZoom = newZoom);
+                            _scheduleZoom(newZoom);
+                          }
+                        },
+                        onScaleEnd: (details) {},
+                        child: CameraPreview(_cameraController!),
+                      ),
+                    )
+                  : const SizedBox.expand(),
             ),
-          ),
-          if (_focusPoint != null)
+          if (!_isIOS)
+            Positioned.fill(
+              child: GestureDetector(
+                onTapDown: (details) => _onCameraTap(details),
+                behavior: HitTestBehavior.translucent,
+                child: const SizedBox(),
+              ),
+            ),
+          if (!_isIOS && _focusPoint != null)
             Positioned(
               left: _focusPoint!.dx - 40,
               top: _focusPoint!.dy - 40,
@@ -345,7 +382,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                     iconPath: 'assets/icons/home.png',
                     onTap: () async {
                       final navigator = Navigator.of(context);
-                      if (_isFlashOn &&
+                      if (!_isIOS &&
+                          _isFlashOn &&
                           _cameraController != null &&
                           _cameraController!.value.isInitialized) {
                         try {
@@ -363,11 +401,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                       );
                     },
                   ),
-                  _TopButton(
-                    iconPath: 'assets/icons/light.png',
-                    onTap: _toggleFlash,
-                    isActive: _isFlashOn,
-                  ),
+                  if (!_isIOS)
+                    _TopButton(
+                      iconPath: 'assets/icons/light.png',
+                      onTap: _toggleFlash,
+                      isActive: _isFlashOn,
+                    ),
                 ],
               ),
             ),
@@ -380,22 +419,23 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1C1C1C),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${_selectedZoom.toStringAsFixed(1)}x',
-                      style: const TextStyle(
-                        color: Color(0xFFF5A623),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                  if (!_isIOS)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1C1C1C),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${_selectedZoom.toStringAsFixed(1)}x',
+                        style: const TextStyle(
+                          color: Color(0xFFF5A623),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                  if (!_isIOS) const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -418,7 +458,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                         ),
                       ),
                       GestureDetector(
-                        onTap: _takePicture,
+                        onTap: _isNativeCameraOpen ? null : _takePicture,
                         child: Container(
                           width: 64,
                           height: 64,
@@ -426,26 +466,37 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                             shape: BoxShape.circle,
                             color: Colors.white,
                           ),
+                          child: _isNativeCameraOpen
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.black,
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: _switchCamera,
-                        child: Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF404040),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Center(
-                            child: Image.asset(
-                              'assets/icons/frontalka.png',
-                              width: 26,
-                              height: 26,
+                      if (!_isIOS)
+                        GestureDetector(
+                          onTap: _switchCamera,
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF404040),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Center(
+                              child: Image.asset(
+                                'assets/icons/frontalka.png',
+                                width: 26,
+                                height: 26,
+                              ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ],
@@ -485,7 +536,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
 
     try {
-      if (_isFlashOn &&
+      if (!_isIOS &&
+          _isFlashOn &&
           _cameraController != null &&
           _cameraController!.value.isInitialized) {
         await _cameraController!.setFlashMode(FlashMode.off);
@@ -504,7 +556,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
         if (mounted) {
           final appState = context.read<AppState>();
-          appState.setCapturedImage(bytes);
+          final normalizedBytes = await _normalizeImageBytes(bytes);
+          appState.setCapturedImage(normalizedBytes);
           Navigator.push(
             context,
             AppTransitions.slideRoute(
@@ -513,12 +566,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
               duration: const Duration(milliseconds: 180),
             ),
           );
-
-          _fixImageOrientationAsync(bytes).then((fixed) {
-            if (!identical(fixed, bytes)) {
-              appState.setCapturedImage(fixed);
-            }
-          });
         }
       } else {
         debugPrint('No image selected from gallery');

@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../utils/app_localizations.dart';
+import '../utils/image_utils.dart';
 import '../utils/transitions.dart';
 import 'camera_page.dart';
 import 'export_screen.dart';
@@ -314,8 +315,8 @@ child: Center(
         final bytes = await image.readAsBytes();
 
         if (mounted) {
-          // Store image in AppState and navigate to editor
-          context.read<AppState>().setCapturedImage(bytes);
+          final normalizedBytes = normalizeImageBytes(bytes);
+          context.read<AppState>().setCapturedImage(normalizedBytes);
           Navigator.push(
             context,
             AppTransitions.slideRoute(
