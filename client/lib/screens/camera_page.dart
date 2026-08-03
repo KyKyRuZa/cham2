@@ -209,7 +209,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         AppTransitions.slideRoute(
           const EditorScreen(),
           direction: SlideDirection.left,
-          duration: const Duration(milliseconds: 180),
+          duration: const Duration(milliseconds: 120),
         ),
       );
     } catch (e) {
@@ -258,7 +258,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           AppTransitions.slideRoute(
             const EditorScreen(),
             direction: SlideDirection.left,
-            duration: const Duration(milliseconds: 180),
+            duration: const Duration(milliseconds: 120),
           ),
         );
       }
@@ -573,7 +573,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             AppTransitions.slideRoute(
               const EditorScreen(),
               direction: SlideDirection.left,
-              duration: const Duration(milliseconds: 180),
+              duration: const Duration(milliseconds: 120),
             ),
           );
         }

@@ -215,18 +215,22 @@ child: ClipRRect(
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
-                            // Set stage to camera before navigating
-                            Provider.of<AppState>(
-                              context,
-                              listen: false,
-                            ).setStage(AppStage.camera);
-                            Navigator.push(
-                              context,
-                              AppTransitions.slideRoute(
-                                const CameraPage(),
-                                direction: SlideDirection.left,
-                              ),
-                            );
+                            if (defaultTargetPlatform ==
+                                TargetPlatform.iOS) {
+                              _openNativeCamera();
+                            } else {
+                              Provider.of<AppState>(
+                                context,
+                                listen: false,
+                              ).setStage(AppStage.camera);
+                              Navigator.push(
+                                context,
+                                AppTransitions.slideRoute(
+                                  const CameraPage(),
+                                  direction: SlideDirection.left,
+                                ),
+                              );
+                            }
                           },
                           child: Container(
                             height: 54,
@@ -277,6 +281,55 @@ child: Center(
     );
   }
 
+  Future<void> _openNativeCamera() async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return;
+
+    PermissionStatus cameraStatus = await Permission.camera.request();
+    if (!cameraStatus.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(AppLocalizations.tr(
+                  context, 'camera_requires_permission'))),
+        );
+      }
+      return;
+    }
+
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        imageQuality: 100,
+      );
+
+      if (!mounted || image == null) return;
+
+      final bytes = await image.readAsBytes();
+      debugPrint('Native camera image: ${bytes.length} bytes');
+
+      final normalizedBytes = normalizeImageBytes(bytes);
+      context.read<AppState>().setCapturedImage(normalizedBytes);
+      Navigator.push(
+        context,
+        AppTransitions.slideRoute(
+          const EditorScreen(),
+          direction: SlideDirection.left,
+          duration: const Duration(milliseconds: 120),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error opening native camera: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  '${AppLocalizations.tr(context, 'camera_error')}: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _pickFromGallery() async {
     // Request storage/photos permission with Android 13+ support
     PermissionStatus status;
@@ -310,9 +363,11 @@ child: Center(
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 1920,
+        imageQuality: 100,
       );
       if (image != null) {
         final bytes = await image.readAsBytes();
+        debugPrint('Picked image from gallery: ${bytes.length} bytes');
 
         if (mounted) {
           final normalizedBytes = normalizeImageBytes(bytes);
@@ -322,6 +377,7 @@ child: Center(
             AppTransitions.slideRoute(
               const EditorScreen(),
               direction: SlideDirection.left,
+              duration: const Duration(milliseconds: 120),
             ),
           );
         }
@@ -329,10 +385,12 @@ child: Center(
         debugPrint('No image selected from gallery');
       }
     } catch (e) {
+      debugPrint('Error picking image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('${AppLocalizations.tr(context, 'error_selecting_image')}: $e')),
+              content: Text(
+                  '${AppLocalizations.tr(context, 'error_selecting_image')}: $e')),
         );
       }
     }
