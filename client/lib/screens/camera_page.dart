@@ -26,8 +26,6 @@ Uint8List _fixImageOrientation(Uint8List bytes) {
   }
 }
 
-/// Runs the (heavy) orientation fix on a background isolate so it never
-/// blocks the UI thread during navigation.
 Future<Uint8List> _fixImageOrientationAsync(Uint8List bytes) {
   return compute(_fixImageOrientation, bytes);
 }
@@ -52,7 +50,24 @@ class _CameraPageState extends State<CameraPage> {
   double _minZoom = 1.0;
   double _maxZoom = 4.0;
 
-  
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  @override
+  void dispose() {
+    if (_isFlashOn && _cameraController != null) {
+      try {
+        _cameraController!.setFlashMode(FlashMode.off);
+      } catch (e) {
+        debugPrint('Error turning off flash in dispose: $e');
+      }
+    }
+    _cameraController?.dispose();
+    super.dispose();
+  }
 
   Future<void> _initializeCamera([int? cameraIndex]) async {
     PermissionStatus cameraStatus = await Permission.camera.request();
@@ -89,7 +104,7 @@ class _CameraPageState extends State<CameraPage> {
         try {
           _minZoom = await _cameraController!.getMinZoomLevel();
           _maxZoom = await _cameraController!.getMaxZoomLevel();
-          _selectedZoom = _selectedZoom.clamp(_minZoom, _maxZoom);
+          _selectedZoom = _minZoom;
         } catch (e) {
           debugPrint('Error getting zoom range: $e');
         }
@@ -130,7 +145,6 @@ class _CameraPageState extends State<CameraPage> {
       return;
     }
 
-    // Отключаем вспышку перед переключением камеры
     if (_isFlashOn &&
         _cameraController != null &&
         _cameraController!.value.isInitialized) {
@@ -143,8 +157,6 @@ class _CameraPageState extends State<CameraPage> {
       }
     }
 
-    // Detach the current preview before disposing the controller to avoid
-    // a crash from CameraPreview referencing an already-disposed controller.
     if (mounted) {
       setState(() {
         _isCameraInitialized = false;
@@ -170,8 +182,6 @@ class _CameraPageState extends State<CameraPage> {
 
       if (!mounted) return;
 
-      // Navigate immediately with the raw bytes for an instant transition,
-      // then fix orientation in a background isolate and update the image.
       final appState = context.read<AppState>();
       appState.setCapturedImage(bytes);
       Navigator.push(
@@ -203,32 +213,27 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   void _onCameraTap(TapDownDetails details) {
-    if (_isCameraInitialized && _cameraController != null) {
-      final Offset tapPosition = details.localPosition;
-      final Size screenSize = MediaQuery.of(context).size;
-      
-      // Вычисляем точки фокусировки в пространстве камеры
-      // CameraController.setFocusPoint accepts values normalized to 0-1
-      final double focusX = (tapPosition.dx / screenSize.width).clamp(0.0, 1.0);
-      final double focusY = (tapPosition.dy / screenSize.height).clamp(0.0, 1.0);
-      
-      // Устанавливаем точку фокусировки камеры
-      _cameraController!.setFocusPoint(Offset(focusX, focusY));
-      
-      // Store the screen position for the focus frame
-      setState(() {
-        _focusPoint = tapPosition;
-      });
-      
-      // Скрываем фокусную рамку через 2 секунды
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() {
-            _focusPoint = null;
-          });
-        }
-      });
-    }
+    if (!_isCameraInitialized || _cameraController == null) return;
+
+    final tapPosition = details.localPosition;
+    final size = MediaQuery.of(context).size;
+
+    final focusX = (tapPosition.dx / size.width).clamp(0.0, 1.0);
+    final focusY = (tapPosition.dy / size.height).clamp(0.0, 1.0);
+
+    _cameraController!.setFocusPoint(Offset(focusX, focusY));
+
+    setState(() {
+      _focusPoint = tapPosition;
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _focusPoint = null;
+        });
+      }
+    });
   }
 
   Future<void> _toggleFlash() async {
@@ -248,50 +253,30 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _initializeCamera();
-  }
-
-  @override
-  void dispose() {
-    if (_isFlashOn && _cameraController != null) {
-      try {
-        _cameraController!.setFlashMode(FlashMode.off);
-      } catch (e) {
-        debugPrint('Error turning off flash in dispose: $e');
-      }
-    }
-    _cameraController?.dispose();
-    super.dispose();
-  }
-
-@override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF151412),
       body: Stack(
         children: [
           Center(
-              child: _isCameraInitialized && _cameraController != null
-                  ? GestureDetector(
-                      onScaleStart: (details) {
-                        _baseZoom = _selectedZoom;
-                      },
-                      onScaleUpdate: (details) {
-                        if (details.pointerCount == 2) {
-                          final newZoom = (_baseZoom * details.scale)
-                              .clamp(_minZoom, _maxZoom);
-                          setState(() => _selectedZoom = newZoom);
-                          _scheduleZoom(newZoom);
-                        }
-                      },
-                      onScaleEnd: (details) {},
-                      child: CameraPreview(_cameraController!),
-                    )
-                  : const SizedBox.expand(),
+            child: _isCameraInitialized && _cameraController != null
+                ? GestureDetector(
+                    onScaleStart: (details) {
+                      _baseZoom = _selectedZoom;
+                    },
+                    onScaleUpdate: (details) {
+                      if (details.pointerCount == 2) {
+                        final newZoom = (_baseZoom * details.scale)
+                            .clamp(_minZoom, _maxZoom);
+                        setState(() => _selectedZoom = newZoom);
+                        _scheduleZoom(newZoom);
+                      }
+                    },
+                    onScaleEnd: (details) {},
+                    child: CameraPreview(_cameraController!),
+                  )
+                : const SizedBox.expand(),
           ),
-          // Manual focus overlay - tappable anywhere for manual focus
           Positioned.fill(
             child: GestureDetector(
               onTapDown: (details) => _onCameraTap(details),
@@ -299,7 +284,6 @@ class _CameraPageState extends State<CameraPage> {
               child: const SizedBox(),
             ),
           ),
-          // Focus frame overlay - shows at tapped position when manual focus is active
           if (_focusPoint != null)
             Positioned(
               left: _focusPoint!.dx - 40,
@@ -310,7 +294,6 @@ class _CameraPageState extends State<CameraPage> {
                 child: CustomPaint(painter: _FocusFramePainter()),
               ),
             ),
-          // Top buttons overlay
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -398,16 +381,9 @@ class _CameraPageState extends State<CameraPage> {
                         child: Container(
                           width: 64,
                           height: 64,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white.withValues(alpha: 0.45),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              ),
-                            ],
                           ),
                         ),
                       ),
@@ -420,13 +396,13 @@ class _CameraPageState extends State<CameraPage> {
                             color: const Color(0xFF404040),
                             borderRadius: BorderRadius.circular(14),
                           ),
-child: Center(
-                             child: Image.asset(
-                               'assets/icons/frontalka.png',
-                               width: 26,
-                               height: 26,
-                             ),
-                           ),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/icons/frontalka.png',
+                              width: 26,
+                              height: 26,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -445,14 +421,12 @@ child: Center(
     if (Theme.of(context).platform == TargetPlatform.iOS) {
       status = await Permission.photos.request();
     } else {
-      // Android: используем Permission.photos для Android 13+ (API 33+), иначе storage
       try {
         status = await Permission.photos.request();
         if (!status.isGranted) {
           status = await Permission.storage.request();
         }
       } catch (e) {
-        // Если Permission.photos не поддерживается (Android <13), используем storage
         status = await Permission.storage.request();
       }
     }
@@ -470,7 +444,6 @@ child: Center(
     }
 
     try {
-      // Отключаем вспышку перед открытием галереи
       if (_isFlashOn &&
           _cameraController != null &&
           _cameraController!.value.isInitialized) {
