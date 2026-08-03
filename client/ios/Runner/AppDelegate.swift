@@ -22,7 +22,7 @@ import AVFoundation
     _ application: UIApplication,
     supportedInterfaceOrientationsFor window: UIWindow?
   ) -> UIInterfaceOrientationMask {
-    return .allButUpsideDown
+    return .portrait
   }
 }
 

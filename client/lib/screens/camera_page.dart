@@ -30,6 +30,23 @@ Future<Uint8List> _fixImageOrientationAsync(Uint8List bytes) {
   return compute(_fixImageOrientation, bytes);
 }
 
+Uint8List _rotateBytesIfLandscape(Uint8List bytes) {
+  try {
+    final view = PlatformDispatcher.instance.views.first;
+    final physicalSize = view.physicalSize;
+    if (physicalSize.width <= physicalSize.height) return bytes;
+
+    final img.Image? decoded = img.decodeImage(bytes);
+    if (decoded == null) return bytes;
+
+    final rotated = img.copyRotate(decoded, angle: 90);
+    return Uint8List.fromList(img.encodeJpg(rotated));
+  } catch (e) {
+    debugPrint('Landscape rotation error: $e');
+    return bytes;
+  }
+}
+
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
 
@@ -37,7 +54,7 @@ class CameraPage extends StatefulWidget {
   State<CameraPage> createState() => _CameraPageState();
 }
 
-class _CameraPageState extends State<CameraPage> {
+class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   CameraController? _cameraController;
   List<CameraDescription>? _cameras;
   final ImagePicker _picker = ImagePicker();
@@ -49,15 +66,19 @@ class _CameraPageState extends State<CameraPage> {
   double _baseZoom = 1.0;
   double _minZoom = 1.0;
   double _maxZoom = 4.0;
+  bool _isLandscape = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _updateOrientation();
     _initializeCamera();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_isFlashOn && _cameraController != null) {
       try {
         _cameraController!.setFlashMode(FlashMode.off);
@@ -67,6 +88,22 @@ class _CameraPageState extends State<CameraPage> {
     }
     _cameraController?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    _updateOrientation();
+  }
+
+  void _updateOrientation() {
+    final view = PlatformDispatcher.instance.views.first;
+    final physicalSize = view.physicalSize;
+    final isLandscape = physicalSize.width > physicalSize.height;
+    if (isLandscape != _isLandscape && mounted) {
+      setState(() {
+        _isLandscape = isLandscape;
+      });
+    }
   }
 
   Future<void> _initializeCamera([int? cameraIndex]) async {
@@ -183,7 +220,8 @@ class _CameraPageState extends State<CameraPage> {
       if (!mounted) return;
 
       final appState = context.read<AppState>();
-      appState.setCapturedImage(bytes);
+      final orientedBytes = _rotateBytesIfLandscape(bytes);
+      appState.setCapturedImage(orientedBytes);
       Navigator.push(
         context,
         AppTransitions.slideRoute(
@@ -193,8 +231,8 @@ class _CameraPageState extends State<CameraPage> {
         ),
       );
 
-      _fixImageOrientationAsync(bytes).then((fixed) {
-        if (!identical(fixed, bytes)) {
+      _fixImageOrientationAsync(orientedBytes).then((fixed) {
+        if (!identical(fixed, orientedBytes)) {
           appState.setCapturedImage(fixed);
         }
       });
@@ -260,20 +298,23 @@ class _CameraPageState extends State<CameraPage> {
         children: [
           SizedBox.expand(
             child: _isCameraInitialized && _cameraController != null
-                ? GestureDetector(
-                    onScaleStart: (details) {
-                      _baseZoom = _selectedZoom;
-                    },
-                    onScaleUpdate: (details) {
-                      if (details.pointerCount == 2) {
-                        final newZoom = (_baseZoom * details.scale)
-                            .clamp(_minZoom, _maxZoom);
-                        setState(() => _selectedZoom = newZoom);
-                        _scheduleZoom(newZoom);
-                      }
-                    },
-                    onScaleEnd: (details) {},
-                    child: CameraPreview(_cameraController!),
+                ? RotatedBox(
+                    quarterTurns: _isLandscape ? 1 : 0,
+                    child: GestureDetector(
+                      onScaleStart: (details) {
+                        _baseZoom = _selectedZoom;
+                      },
+                      onScaleUpdate: (details) {
+                        if (details.pointerCount == 2) {
+                          final newZoom = (_baseZoom * details.scale)
+                              .clamp(_minZoom, _maxZoom);
+                          setState(() => _selectedZoom = newZoom);
+                          _scheduleZoom(newZoom);
+                        }
+                      },
+                      onScaleEnd: (details) {},
+                      child: CameraPreview(_cameraController!),
+                    ),
                   )
                 : const SizedBox.expand(),
           ),
