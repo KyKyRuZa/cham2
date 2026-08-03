@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'models/app_state.dart';
-import 'screens/camera_page.dart';
 import 'screens/projects_screen.dart';
 import 'screens/editor_screen.dart';
 import 'screens/color_picker_screen.dart';
@@ -112,7 +111,7 @@ class _AppMaterialApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const CameraPage(),
+      home: const ProjectsScreen(),
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/projects':
@@ -148,7 +147,7 @@ case '/color_picker':
             );
           default:
             return AppTransitions.fadeRoute(
-              const CameraPage(),
+              const ProjectsScreen(),
               withScale: true,
             );
         }

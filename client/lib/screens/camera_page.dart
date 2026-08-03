@@ -403,6 +403,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                       );
                     },
                   ),
+                  if (_isIOS)
+                    _TopButton(
+                      iconPath: 'assets/icons/Close.png',
+                      onTap: () {
+                        if (!mounted) return;
+                        Navigator.of(context).pushAndRemoveUntil(
+                          AppTransitions.fadeRoute(const ProjectsScreen()),
+                          (route) => false,
+                        );
+                      },
+                    ),
                   if (!_isIOS)
                     _TopButton(
                       iconPath: 'assets/icons/light.png',
