@@ -253,7 +253,7 @@ class _EditorScreenState extends State<EditorScreen>
   Widget _buildRecolorToggle() {
     final bool complex = _isComplexRecolorMode;
 
-    const double trackWidth = 160;
+    const double trackWidth = 120;
     const double trackHeight = 44;
     const double thumbSize = 54;
 

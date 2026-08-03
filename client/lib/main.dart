@@ -23,6 +23,8 @@ void main() async {
   }
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
   ]);
   runApp(
     ChangeNotifierProvider(
