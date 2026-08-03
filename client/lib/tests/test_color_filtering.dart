@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
-import 'lib/services/image_processing_service.dart';
+import '../services/image_processing_service.dart';
+import '../utils/logger.dart';
 
 void main() {
-  print('=== Тест цветовой фильтрации маски ===\n');
+  AppLog.i('=== Тест цветовой фильтрации маски ===\n');
 
   final width = 10;
   final height = 10;
@@ -27,10 +28,10 @@ void main() {
     mask[i] = 1;
   }
 
-  print(
-    'Изображение: ${width}x${height}, выделено: ${mask.where((v) => v == 1).length} пикселей',
+  AppLog.i(
+    'Изображение: $width x $height, выделено: ${mask.where((v) => v == 1).length} пикселей',
   );
-  print(
+  AppLog.i(
     'Основной цвет: RGB(200,50,50), outliers: (5,5)=blue, (3,7)=blue, (8,2)=green\n',
   );
 
@@ -46,10 +47,10 @@ void main() {
   );
 
   final filteredCount = filteredMask.where((v) => v == 1).length;
-  print('\nРезультат: осталось $filteredCount пикселей');
+  AppLog.i('\nРезультат: осталось $filteredCount пикселей');
   if (filteredCount == 97) {
-    print('✅ ТЕСТ ПРОЙДЕН: удалено 3 outlier-пикселя');
+    AppLog.i('✅ ТЕСТ ПРОЙДЕН: удалено 3 outlier-пикселя');
   } else {
-    print('❌ ТЕСТ НЕ ПРОЙДЕН: ожидалось 97, получено $filteredCount');
+    AppLog.i('❌ ТЕСТ НЕ ПРОЙДЕН: ожидалось 97, получено $filteredCount');
   }
 }

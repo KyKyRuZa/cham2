@@ -1,21 +1,21 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:image/image.dart' as img;
 
 class SegmentationService {
+  static const int defaultRequestTimeout = 90;
   final String serverUrl;
   final String? apiKey;
   final http.Client _client;
 
   SegmentationService({String? serverUrl, String? apiKey, http.Client? client})
-      : serverUrl = serverUrl ?? _resolveServerUrl(),
-        apiKey = apiKey ?? _resolveApiKey(),
-        _client = client ?? http.Client();
+    : serverUrl = serverUrl ?? _resolveServerUrl(),
+      apiKey = apiKey ?? _resolveApiKey(),
+      _client = client ?? http.Client();
 
   /// Определяет URL сервера с приоритетом:
   /// 1. --dart-define (SERVER_URL) 2. .env (SERVER_URL) 3. значение по умолчанию.
@@ -47,6 +47,33 @@ class SegmentationService {
     return null;
   }
 
+  static Uint8List _compressImage(
+    Uint8List bytes, {
+    int maxDim = 1024,
+    int quality = 80,
+  }) {
+    try {
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) return bytes;
+      int w = decoded.width;
+      int h = decoded.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = (h * maxDim / w).round();
+          w = maxDim;
+        } else {
+          w = (w * maxDim / h).round();
+          h = maxDim;
+        }
+        final resized = img.copyResize(decoded, width: w, height: h);
+        return Uint8List.fromList(img.encodeJpg(resized, quality: quality));
+      }
+      return Uint8List.fromList(img.encodeJpg(decoded, quality: quality));
+    } on Exception catch (_) {
+      return bytes;
+    }
+  }
+
   Future<bool> isServerAvailable() async {
     try {
       final response = await _client
@@ -58,7 +85,7 @@ class SegmentationService {
     }
   }
 
-Future<Uint8List?> segmentObject({
+  Future<Uint8List?> segmentObject({
     required Uint8List imageBytes,
     required Offset imagePosition,
     required int imageWidth,
@@ -92,10 +119,11 @@ Future<Uint8List?> segmentObject({
       if (apiKey != null && apiKey!.isNotEmpty) {
         request.headers['X-API-Key'] = apiKey!;
       }
+      final compressedImage = _compressImage(imageBytes);
       request.files.add(
         http.MultipartFile.fromBytes(
           'image',
-          imageBytes,
+          compressedImage,
           filename: 'image.jpg',
           contentType: MediaType('image', 'jpeg'),
         ),
@@ -104,7 +132,8 @@ Future<Uint8List?> segmentObject({
       request.fields['point_y'] = imagePosition.dy.round().toString();
       request.fields['material'] = material;
       request.fields['patina'] = patina ? 'true' : 'false';
-      request.fields['color_hex'] = '0x${rgbValue.toRadixString(16).padLeft(6, '0')}';
+      request.fields['color_hex'] =
+          '0x${rgbValue.toRadixString(16).padLeft(6, '0')}';
       request.fields['color_r'] = colorR.toString();
       request.fields['color_g'] = colorG.toString();
       request.fields['color_b'] = colorB.toString();
@@ -118,59 +147,35 @@ Future<Uint8List?> segmentObject({
       request.fields['num_inference_steps'] = numInferenceSteps.toString();
 
       final streamedResponse = await request.send().timeout(
-        const Duration(seconds: 60),
+        Duration(
+          seconds: int.fromEnvironment(
+            'REQUEST_TIMEOUT',
+            defaultValue: defaultRequestTimeout,
+          ),
+        ),
       );
+      final sw = Stopwatch()..start();
       final response = await http.Response.fromStream(streamedResponse);
-      debugPrint('AI recolor response: status=${response.statusCode}, bytes=${response.bodyBytes.length}');
+      sw.stop();
+      if (kDebugMode) {
+        debugPrint(
+          'AI recolor response: status=${response.statusCode}, bytes=${response.bodyBytes.length}',
+        );
+      }
 
       if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         return Uint8List.fromList(response.bodyBytes);
       }
-      debugPrint('AI recolor empty/invalid response: status=${response.statusCode}');
+      if (kDebugMode) {
+        debugPrint(
+          'AI recolor empty/invalid response: status=${response.statusCode}',
+        );
+      }
       return null;
     } catch (e) {
-      debugPrint('AI recolor error: $e');
+      if (kDebugMode) debugPrint('AI recolor error: $e');
       return null;
     }
-  }
-
-  List<List<int>> _rleDecode(Map<String, dynamic> rle, int width, int height) {
-    final List<int> counts = List<int>.from(rle['counts']);
-    final List<List<int>> mask = List.generate(
-      height,
-      (y) => List.filled(width, 0),
-    );
-    int idx = 0;
-    int val = 0;
-    for (final int count in counts) {
-      final int end = idx + count;
-      if (end > width * height) break;
-      final int startRow = idx ~/ width;
-      final int endRow = (end - 1) ~/ width;
-      for (int y = startRow; y <= endRow; y++) {
-        final int startCol = (y == startRow) ? idx % width : 0;
-        final int endCol = (y == endRow) ? (end - 1) % width : width - 1;
-        for (int x = startCol; x <= endCol; x++) {
-          if (y < height && x < width) {
-            mask[y][x] = val;
-          }
-        }
-      }
-      idx = end;
-      val = 1 - val;
-    }
-    return mask;
-  }
-
-  Uint8List _maskToUint8List(List<List<int>> mask, int width, int height) {
-    final Uint8List bytes = Uint8List(width * height);
-    int i = 0;
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        bytes[i++] = mask[y][x] == 1 ? 1 : 0;
-      }
-    }
-    return bytes;
   }
 
   void dispose() {

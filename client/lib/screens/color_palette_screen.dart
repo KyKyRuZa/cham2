@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../models/app_state.dart';
+import '../models/settings_state.dart';
 import '../utils/app_localizations.dart';
 
 class ColorPaletteScreen extends StatefulWidget {
@@ -27,7 +27,7 @@ class _ColorPaletteScreenState extends State<ColorPaletteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _colorCategories = [
+    _colorCategories ??= [
       _ColorCategory(AppLocalizations.tr(context, 'color_categories_red'), [
         const Color(0xFFE53935),
         const Color(0xFFB71C1C),
@@ -314,7 +314,7 @@ class _PatinaToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final patinaMode = context.select<AppState, bool>((s) => s.patinaMode);
+    final patinaMode = context.select<SettingsState, bool>((s) => s.patinaMode);
     return Padding(
       padding: const EdgeInsets.only(top: 14, left: 4),
       child: Column(
@@ -324,7 +324,7 @@ class _PatinaToggle extends StatelessWidget {
           Switch(
             value: patinaMode,
             onChanged: (value) {
-              context.read<AppState>().setPatinaMode(value);
+              context.read<SettingsState>().setPatinaMode(value);
             },
           ),
           Text(
@@ -358,7 +358,7 @@ class _ColorCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final patinaMode = context.select<AppState, bool>((s) => s.patinaMode);
+    final patinaMode = context.select<SettingsState, bool>((s) => s.patinaMode);
     var displayColor = color;
     if (isMetal && patinaMode) {
       displayColor = _applyPatinaWash(color);

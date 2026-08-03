@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
-import 'lib/services/image_processing_service.dart';
+import '../services/image_processing_service.dart';
+import '../utils/logger.dart';
 
 void main() {
-  print('=== Тест аддитивной селекции (сохранения предыдущей маски) ===\n');
+  AppLog.i('=== Тест аддитивной селекции (сохранения предыдущей маски) ===\n');
 
   final width = 10;
   final height = 10;
@@ -40,10 +41,10 @@ void main() {
     }
   }
 
-  print(
+  AppLog.i(
     'Объект 1: левая половина (красный), пикселей: ${mask1.where((v) => v == 1).length}',
   );
-  print(
+  AppLog.i(
     'Объект 2: правая половина (зелёный), пикселей: ${mask2.where((v) => v == 1).length}',
   );
 
@@ -78,12 +79,12 @@ void main() {
   }
 
   final totalSelected = combined.where((v) => v == 1).length;
-  print('\nПосле двух сегментаций (аддитивный режим):');
-  print('Всего выделенных пикселей: $totalSelected');
+  AppLog.i('\nПосле двух сегментаций (аддитивный режим):');
+  AppLog.i('Всего выделенных пикселей: $totalSelected');
 
   if (totalSelected == 100) {
-    print('✅ ТЕСТ ПРОЙДЕН: обе половины изображения выделены');
+    AppLog.i('✅ ТЕСТ ПРОЙДЕН: обе половины изображения выделены');
   } else {
-    print('❌ ТЕСТ НЕ ПРОЙДЕН: ожидалось 100, получено $totalSelected');
+    AppLog.i('❌ ТЕСТ НЕ ПРОЙДЕН: ожидалось 100, получено $totalSelected');
   }
 }

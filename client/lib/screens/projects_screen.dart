@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
+    show defaultTargetPlatform, TargetPlatform, kDebugMode;
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import '../models/app_state.dart';
+import '../models/project_state.dart';
+import '../models/recolor_state.dart';
 import '../utils/app_localizations.dart';
 import '../utils/image_utils.dart';
 import '../utils/transitions.dart';
@@ -103,9 +104,9 @@ Expanded(
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Consumer<AppState>(
-                      builder: (context, appState, child) {
-                        final projects = appState.sortedProjects;
+                    child: Consumer<ProjectState>(
+                      builder: (context, projectState, child) {
+                        final projects = projectState.sortedProjects;
                         if (projects.isEmpty) {
                           return Center(
                             child: Text(
@@ -126,9 +127,9 @@ Expanded(
                           itemBuilder: (context, index) {
                             final project = projects[index];
                             return GestureDetector(
-onTap: () {
-                                // Open project in export
-                                appState.setCapturedImage(project.imageBytes);
+ onTap: () {
+                                final recolorState = context.read<RecolorState>();
+                                recolorState.setCapturedImage(project.imageBytes);
                                 Navigator.push(
                                   context,
                                   AppTransitions.slideRoute(
@@ -151,7 +152,7 @@ child: ClipRRect(
                                       top: 8,
                                       left: 8,
                                       child: GestureDetector(
-                                        onTap: () => appState.toggleProjectLike(
+                                        onTap: () => projectState.toggleProjectLike(
                                             project.id,
                                           ),
                                         child: Container(
@@ -178,7 +179,7 @@ child: ClipRRect(
                                       top: 8,
                                       right: 8,
                                       child: GestureDetector(
-                                        onTap: () => appState.deleteProject(project.id),
+                                        onTap: () => projectState.deleteProject(project.id),
                                         child: Container(
                                           width: 32,
                                           height: 32,
@@ -219,7 +220,7 @@ child: ClipRRect(
                                 TargetPlatform.iOS) {
                               _openNativeCamera();
                             } else {
-                              Provider.of<AppState>(
+                              Provider.of<RecolorState>(
                                 context,
                                 listen: false,
                               ).setStage(AppStage.camera);
@@ -284,13 +285,14 @@ child: Center(
   Future<void> _openNativeCamera() async {
     if (defaultTargetPlatform != TargetPlatform.iOS) return;
 
+    final navigatorContext = context;
     PermissionStatus cameraStatus = await Permission.camera.request();
     if (!cameraStatus.isGranted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (navigatorContext.mounted) {
+        ScaffoldMessenger.of(navigatorContext).showSnackBar(
           SnackBar(
               content: Text(AppLocalizations.tr(
-                  context, 'camera_requires_permission'))),
+                  navigatorContext, 'camera_requires_permission'))),
         );
       }
       return;
@@ -306,25 +308,30 @@ child: Center(
       if (!mounted || image == null) return;
 
       final bytes = await image.readAsBytes();
-      debugPrint('Native camera image: ${bytes.length} bytes');
+      if (kDebugMode) debugPrint('Native camera image: ${bytes.length} bytes');
 
+      if (!mounted) return;
       final normalizedBytes = normalizeImageBytes(bytes);
-      context.read<AppState>().setCapturedImage(normalizedBytes);
-      Navigator.push(
-        context,
-        AppTransitions.slideRoute(
-          const EditorScreen(),
-          direction: SlideDirection.left,
-          duration: const Duration(milliseconds: 120),
-        ),
-      );
+      if (navigatorContext.mounted) {
+        navigatorContext.read<RecolorState>().setCapturedImage(normalizedBytes);
+      }
+      if (navigatorContext.mounted) {
+        Navigator.push(
+          navigatorContext,
+          AppTransitions.slideRoute(
+            const EditorScreen(),
+            direction: SlideDirection.left,
+            duration: const Duration(milliseconds: 120),
+          ),
+        );
+      }
     } catch (e) {
-      debugPrint('Error opening native camera: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (kDebugMode) debugPrint('Error opening native camera: $e');
+      if (navigatorContext.mounted) {
+        ScaffoldMessenger.of(navigatorContext).showSnackBar(
           SnackBar(
               content: Text(
-                  '${AppLocalizations.tr(context, 'camera_error')}: $e')),
+                  '${AppLocalizations.tr(navigatorContext, 'camera_error')}: $e')),
         );
       }
     }
@@ -367,11 +374,11 @@ child: Center(
       );
       if (image != null) {
         final bytes = await image.readAsBytes();
-        debugPrint('Picked image from gallery: ${bytes.length} bytes');
+        if (kDebugMode) debugPrint('Picked image from gallery: ${bytes.length} bytes');
 
         if (mounted) {
           final normalizedBytes = normalizeImageBytes(bytes);
-          context.read<AppState>().setCapturedImage(normalizedBytes);
+          context.read<RecolorState>().setCapturedImage(normalizedBytes);
           Navigator.push(
             context,
             AppTransitions.slideRoute(
@@ -382,10 +389,10 @@ child: Center(
           );
         }
       } else {
-        debugPrint('No image selected from gallery');
+        if (kDebugMode) debugPrint('No image selected from gallery');
       }
     } catch (e) {
-      debugPrint('Error picking image: $e');
+      if (kDebugMode) debugPrint('Error picking image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

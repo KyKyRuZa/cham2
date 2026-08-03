@@ -1,4 +1,4 @@
-name: flutter_application_1
+name: chameleon
 description: "Mobile furniture recoloring app with realistic texture preservation"
 publish_to: "none"
 
@@ -14,56 +14,59 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # Camera for taking photos
-  camera: ^0.11.0+2
-  camera_platform_interface: ^2.13.0
+  camera: ^0.12.0+2
+  camera_platform_interface: ^2.13.1
 
   # Image picker for selecting existing photos
-  image_picker: ^1.2.1
+  image_picker: ^1.2.3
   image_picker_platform_interface: ^2.11.1
 
   # Image processing for recoloring algorithm
-  image: ^4.8.0
+  image: ^4.9.1
 
   # Color picker UI
   flex_color_picker: ^3.6.0
 
   # Path provider for file operations
-  path_provider: ^2.1.4
+  path_provider: ^2.1.6
 
   # Permission handling
-  permission_handler: ^11.3.1
+  permission_handler: ^13.0.0
 
   # Provider for state management
   provider: ^6.1.2
 
   # Local storage
-  shared_preferences: ^2.2.2
-  
+  shared_preferences: ^2.3.2
+
   # Path manipulation
   path: ^1.9.0
 
   # Sharing files
-  share_plus: ^13.2.0
+  share_plus: ^13.3.0
 
   # Save image to gallery
 
   # HTTP client for server communication
-  http: ^0.13.6
+  http: ^1.6.0
 
   # HTTP parser for multipart requests
   http_parser: ^4.1.2
 
   # WebView for transparent video (WebM + VP9 alpha) on all platforms
   webview_flutter: ^4.10.0
-  webview_flutter_android: ^4.0.0
+  webview_flutter_android: ^4.13.0
   flutter_dotenv: ^6.0.1
-  gal: ^2.3.2
+  gal: ^2.3.3
+
+  # Lottie animations
+  lottie: ^3.5.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
 
 flutter_launcher_icons:
   android: true
@@ -73,6 +76,7 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/logo/logotip.png
     - assets/icons/logo.png
     - assets/icons/Add_Image.png
@@ -100,9 +104,6 @@ flutter:
     - assets/icons/Diagonal Lines.png
     - assets/icons/ramka.png
     - assets/icons/Color Dropper_layerstyle.png
-    - assets/icons/light.png
-    - assets/icons/home.png
-    - assets/icons/frontalka.png
     - assets/textures/metal_texture.png
     - assets/textures/metall1.png
     - assets/textures/metall2.png
@@ -112,6 +113,4 @@ flutter:
     - assets/metall/Rectangle 865.png
     - assets/textures/wood1.png
     - assets/textures/wood2.png
-    - assets/zagruuuuzka.webm
-    - assets/zagruuuuzka.mov
-    - assets/loading_overlay.html
+    - assets/zagruuuuzka.lottie

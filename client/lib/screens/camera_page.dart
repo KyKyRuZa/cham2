@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import '../models/app_state.dart';
+import '../models/recolor_state.dart';
 import '../utils/app_localizations.dart';
 import '../utils/image_utils.dart';
 import '../utils/transitions.dart';
@@ -31,11 +32,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   bool _isCameraInitialized = false;
   int _currentCameraIndex = 0;
   double _selectedZoom = 1.0;
-  bool _isFlashOn = false;
-  Offset? _focusPoint;
   double _baseZoom = 1.0;
   double _minZoom = 1.0;
-  double _maxZoom = 4.0;
+  final double _maxZoom = 4.0;
+  bool _isFlashOn = false;
+  Offset? _focusPoint;
   bool _isLandscape = false;
   bool _isNativeCameraOpen = false;
   bool _didOpenNativeCamera = false;
@@ -62,7 +63,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       try {
         _cameraController!.setFlashMode(FlashMode.off);
       } catch (e) {
-        debugPrint('Error turning off flash in dispose: $e');
+        if (kDebugMode) debugPrint('Error turning off flash in dispose: $e');
       }
     }
     _cameraController?.dispose();
@@ -91,8 +92,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(AppLocalizations.tr(
-                  context, 'camera_requires_permission'))),
+            content: Text(
+              AppLocalizations.tr(context, 'camera_requires_permission'),
+            ),
+          ),
         );
       }
       return;
@@ -119,16 +122,15 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
         try {
           _minZoom = await _cameraController!.getMinZoomLevel();
-          _maxZoom = await _cameraController!.getMaxZoomLevel();
           _selectedZoom = _minZoom;
         } catch (e) {
-          debugPrint('Error getting zoom range: $e');
+          if (kDebugMode) debugPrint('Error getting zoom range: $e');
         }
 
         try {
           await _cameraController!.setZoomLevel(_selectedZoom);
         } catch (e) {
-          debugPrint('Error setting initial zoom: $e');
+          if (kDebugMode) debugPrint('Error setting initial zoom: $e');
         }
 
         if (mounted) {
@@ -138,13 +140,15 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         }
       }
     } catch (e) {
-      debugPrint('Camera initialization error: $e');
+      if (kDebugMode) debugPrint('Camera initialization error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text(
-                '${AppLocalizations.tr(context, 'camera_error')}: $e')));
+              '${AppLocalizations.tr(context, 'camera_error')}: $e',
+            ),
+          ),
+        );
       }
     }
   }
@@ -154,8 +158,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(AppLocalizations.tr(
-                  context, 'camera_switch_unavailable'))),
+            content: Text(
+              AppLocalizations.tr(context, 'camera_switch_unavailable'),
+            ),
+          ),
         );
       }
       return;
@@ -169,7 +175,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         _isFlashOn = false;
         if (mounted) setState(() {});
       } catch (e) {
-        debugPrint('Error turning off flash: $e');
+        if (kDebugMode) debugPrint('Error turning off flash: $e');
       }
     }
 
@@ -200,12 +206,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     try {
       final XFile image = await _cameraController!.takePicture();
       final bytes = await image.readAsBytes();
-
       if (!mounted) return;
-
-      final appState = context.read<AppState>();
+      final appState = context.read<RecolorState>();
       final normalizedBytes = await _normalizeImageBytes(bytes);
       appState.setCapturedImage(normalizedBytes);
+      if (!mounted) return;
       Navigator.push(
         context,
         AppTransitions.slideRoute(
@@ -215,7 +220,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         ),
       );
     } catch (e) {
-      debugPrint('Error taking picture: $e');
+      if (kDebugMode) debugPrint('Error taking picture: $e');
     }
   }
 
@@ -228,8 +233,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(AppLocalizations.tr(
-                  context, 'camera_requires_permission'))),
+            content: Text(
+              AppLocalizations.tr(context, 'camera_requires_permission'),
+            ),
+          ),
         );
       }
       setState(() => _isNativeCameraOpen = false);
@@ -250,11 +257,21 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
       if (image != null) {
         final bytes = await image.readAsBytes();
-        debugPrint('Native camera image: ${bytes.length} bytes');
+        if (kDebugMode) {
+          debugPrint('Native camera image: ${bytes.length} bytes');
+        }
 
-        final appState = context.read<AppState>();
+        if (!mounted) {
+          setState(() => _isNativeCameraOpen = false);
+          return;
+        }
+        final appState = context.read<RecolorState>();
         final normalizedBytes = await _normalizeImageBytes(bytes);
         appState.setCapturedImage(normalizedBytes);
+        if (!mounted) {
+          setState(() => _isNativeCameraOpen = false);
+          return;
+        }
         Navigator.push(
           context,
           AppTransitions.slideRoute(
@@ -264,18 +281,24 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           ),
         );
       } else {
+        if (!mounted) {
+          setState(() => _isNativeCameraOpen = false);
+          return;
+        }
         Navigator.of(context).pushAndRemoveUntil(
           AppTransitions.fadeRoute(const ProjectsScreen()),
           (route) => false,
         );
       }
     } catch (e) {
-      debugPrint('Error opening native camera: $e');
+      if (kDebugMode) debugPrint('Error opening native camera: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  '${AppLocalizations.tr(context, 'camera_error')}: $e')),
+            content: Text(
+              '${AppLocalizations.tr(context, 'camera_error')}: $e',
+            ),
+          ),
         );
       }
     } finally {
@@ -290,7 +313,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       return;
     }
     _cameraController!.setZoomLevel(zoom).catchError((e) {
-      debugPrint('Error setting zoom: $e');
+      if (kDebugMode) debugPrint('Error setting zoom: $e');
     });
   }
 
@@ -330,7 +353,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       );
       setState(() {});
     } catch (e) {
-      debugPrint('Error toggling flash: $e');
+      if (kDebugMode) debugPrint('Error toggling flash: $e');
     }
   }
 
@@ -351,13 +374,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                         },
                         onScaleUpdate: (details) {
                           if (details.pointerCount == 2) {
-                            final newZoom = (_baseZoom * details.scale)
-                                .clamp(_minZoom, _maxZoom);
+                            final newZoom = (_baseZoom * details.scale).clamp(
+                              _minZoom,
+                              _maxZoom,
+                            );
                             setState(() => _selectedZoom = newZoom);
                             _scheduleZoom(newZoom);
                           }
                         },
                         onScaleEnd: (details) {},
+                        onTapDown: (details) => _onCameraTap(details),
+                        behavior: HitTestBehavior.translucent,
                         child: CameraPreview(_cameraController!),
                       ),
                     )
@@ -366,6 +393,20 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           if (!_isIOS)
             Positioned.fill(
               child: GestureDetector(
+                onScaleStart: (details) {
+                  _baseZoom = _selectedZoom;
+                },
+                onScaleUpdate: (details) {
+                  if (details.pointerCount == 2) {
+                    final newZoom = (_baseZoom * details.scale).clamp(
+                      _minZoom,
+                      _maxZoom,
+                    );
+                    setState(() => _selectedZoom = newZoom);
+                    _scheduleZoom(newZoom);
+                  }
+                },
+                onScaleEnd: (details) {},
                 onTapDown: (details) => _onCameraTap(details),
                 behavior: HitTestBehavior.translucent,
                 child: const SizedBox(),
@@ -400,7 +441,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                           _isFlashOn = false;
                           if (mounted) setState(() {});
                         } catch (e) {
-                          debugPrint('Error turning off flash: $e');
+                          if (kDebugMode) {
+                            debugPrint('Error turning off flash: $e');
+                          }
                         }
                       }
                       if (!mounted) return;
@@ -410,17 +453,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                       );
                     },
                   ),
-                    if (_isIOS)
-                      _TopButton(
-                        iconPath: 'assets/icons/Close.png',
-                        onTap: () {
-                          if (!mounted) return;
-                          Navigator.of(context).pushAndRemoveUntil(
-                            AppTransitions.fadeRoute(const ProjectsScreen()),
-                            (route) => false,
-                          );
-                        },
-                      ),
+                  if (_isIOS)
+                    _TopButton(
+                      iconPath: 'assets/icons/Close.png',
+                      onTap: () {
+                        if (!mounted) return;
+                        Navigator.of(context).pushAndRemoveUntil(
+                          AppTransitions.fadeRoute(const ProjectsScreen()),
+                          (route) => false,
+                        );
+                      },
+                    ),
                   if (!_isIOS)
                     _TopButton(
                       iconPath: 'assets/icons/light.png',
@@ -441,7 +484,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                 children: [
                   if (!_isIOS)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1C1C1C),
                         borderRadius: BorderRadius.circular(20),
@@ -547,8 +593,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.tr(
-                context, 'gallery_permission_required')),
+            content: Text(
+              AppLocalizations.tr(context, 'gallery_permission_required'),
+            ),
           ),
         );
       }
@@ -572,12 +619,15 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       );
       if (image != null) {
         final bytes = await image.readAsBytes();
-        debugPrint('Picked image from gallery: ${bytes.length} bytes');
+        if (kDebugMode) {
+          debugPrint('Picked image from gallery: ${bytes.length} bytes');
+        }
 
         if (mounted) {
-          final appState = context.read<AppState>();
+          final appState = context.read<RecolorState>();
           final normalizedBytes = await _normalizeImageBytes(bytes);
           appState.setCapturedImage(normalizedBytes);
+          if (!mounted) return;
           Navigator.push(
             context,
             AppTransitions.slideRoute(
@@ -588,15 +638,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           );
         }
       } else {
-        debugPrint('No image selected from gallery');
+        if (kDebugMode) debugPrint('No image selected from gallery');
       }
     } catch (e) {
-      debugPrint('Error picking image: $e');
+      if (kDebugMode) debugPrint('Error picking image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  '${AppLocalizations.tr(context, 'error_selecting_image')}: $e')),
+            content: Text(
+              '${AppLocalizations.tr(context, 'error_selecting_image')}: $e',
+            ),
+          ),
         );
       }
     }
@@ -607,11 +659,7 @@ class _TopButton extends StatelessWidget {
   final String iconPath;
   final VoidCallback? onTap;
   final bool isActive;
-  const _TopButton({
-    required this.iconPath,
-    this.onTap,
-    this.isActive = false,
-  });
+  const _TopButton({required this.iconPath, this.onTap, this.isActive = false});
 
   @override
   Widget build(BuildContext context) {

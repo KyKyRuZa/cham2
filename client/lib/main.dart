@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'models/app_state.dart';
+import 'models/selection_state.dart';
+import 'models/project_state.dart';
+import 'models/settings_state.dart';
+import 'models/recolor_state.dart';
 import 'screens/projects_screen.dart';
 import 'screens/editor_screen.dart';
 import 'screens/color_picker_screen.dart';
@@ -13,19 +17,22 @@ import 'utils/transitions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Загружаем переменные окружения (.env). Если файл отсутствует —
-  // приложение продолжит работу со значениями по умолчанию.
   try {
     await dotenv.load(fileName: '.env');
   } catch (e) {
-    debugPrint('Не удалось загрузить .env: $e');
+    if (kDebugMode) debugPrint('Не удалось загрузить .env: $e');
   }
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AppState()..initialize(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SelectionState()),
+        ChangeNotifierProvider(create: (_) => ProjectState()..initialize()),
+        ChangeNotifierProvider(create: (_) => SettingsState()),
+        ChangeNotifierProvider(create: (_) => RecolorState()),
+      ],
       child: const FurnitureRecoloringApp(),
     ),
   );
@@ -83,7 +90,7 @@ class _AppMaterialApp extends StatelessWidget {
             backgroundColor: const Color(0xFFF5C518),
             foregroundColor: Colors.black,
             elevation: 3,
-            shadowColor: const Color(0xFFF5C518).withValues(alpha: 0.3),
+            shadowColor: const Color(0xFFF5C518).withAlpha((0.3 * 255).round()),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12)),
             ),

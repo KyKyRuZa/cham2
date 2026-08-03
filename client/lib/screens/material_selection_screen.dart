@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../models/app_state.dart';
+import '../models/settings_state.dart';
 import '../utils/app_localizations.dart';
 
 class MaterialSelectionScreen extends StatefulWidget {
@@ -34,7 +34,7 @@ class _MaterialSelectionScreenState extends State<MaterialSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_initialized) {
-      _selectedMaterial = context.select<AppState, String>((s) => s.selectedMaterial);
+      _selectedMaterial = context.select<SettingsState, String>((s) => s.selectedMaterial);
       _initialized = true;
     }
     _materialLabels = {
@@ -116,19 +116,18 @@ class _MaterialSelectionScreenState extends State<MaterialSelectionScreen> {
           ),
           GestureDetector(
             onTap: () {
-              final appState = context.read<AppState>();
-              appState.setSelectedMaterial(_selectedMaterial);
-              // Сбрасываем текстуры если выбран не wood/metal/no_texture
+              final settingsState = context.read<SettingsState>();
+              settingsState.setSelectedMaterial(_selectedMaterial);
               if (_selectedMaterial != 'wood' && _selectedMaterial != 'no_texture') {
-                appState.setSelectedWoodTexture(null);
+                settingsState.setSelectedWoodTexture(null);
               }
               if (_selectedMaterial != 'metal' && _selectedMaterial != 'no_texture') {
-                appState.setSelectedMetalTexture(null);
+                settingsState.setSelectedMetalTexture(null);
               }
               // Для no_texture сбрасываем все текстуры
               if (_selectedMaterial == 'no_texture') {
-                appState.setSelectedWoodTexture(null);
-                appState.setSelectedMetalTexture(null);
+                settingsState.setSelectedWoodTexture(null);
+                settingsState.setSelectedMetalTexture(null);
               }
               Navigator.pop(context, _selectedMaterial);
             },

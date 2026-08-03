@@ -1,8 +1,9 @@
 import 'dart:typed_data';
-import 'lib/services/image_processing_service.dart';
+import '../services/image_processing_service.dart';
+import '../utils/logger.dart';
 
 void main() {
-  print('=== Тест алгоритма классификации пикселей по яркости ===\n');
+  AppLog.i('=== Тест алгоритма классификации пикселей по яркости ===\n');
 
   // Создаем тестовое изображение 10x10 с разными яркостями
   final width = 10;
@@ -27,8 +28,8 @@ void main() {
   // Кодируем в PNG (упрощенно - используем библиотеку image)
   // Для теста просто вызовем функцию классификации
 
-  print('Тестовые данные созданы: изображение ${width}x${height}');
-  print('Градиент от темного (0,0,0) к светлому (255,255,255)\n');
+  AppLog.i('Тестовые данные созданы: изображение $width x $height');
+  AppLog.i('Градиент от темного (0,0,0) к светлому (255,255,255)\n');
 
   // Создаем маску выборки (выделяем все пиксели)
   final selectionMask = Uint8List(width * height);
@@ -40,7 +41,7 @@ void main() {
   // Используем простое кодирование
   final imageBytes = encodeTestPng(pixels, width, height);
 
-  print(
+  AppLog.i(
     'Вызов функции recolorImage с целевым цветом RGB(139, 69, 19) - коричневый\n',
   );
 
@@ -55,8 +56,8 @@ void main() {
     blendFactor: 1.0,
   );
 
-  print('Результат: изображение перекрашено, размер ${result.length} байт');
-  print('\n=== Тест завершен ===');
+  AppLog.i('Результат: изображение перекрашено, размер ${result.length} байт');
+  AppLog.i('\n=== Тест завершен ===');
 }
 
 // Упрощенное кодирование PNG для теста

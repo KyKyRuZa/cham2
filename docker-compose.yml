@@ -22,26 +22,14 @@ services:
     image: segment-ai:latest
     container_name: segment-ai
     restart: unless-stopped
-    ports:
-      - "8001:8001"
-
-
-    # ---------- ОПТИМИЗАЦИЯ ПАМЯТИ ----------
-    shm_size: 16g               # Разделяемая память для PyTorch/NCCL
-    ipc: host                   # Доступ к IPC хоста
+    shm_size: 16g
 
     environment:
       - PORT=8001
-      # Путь к кешу Hugging Face
       - HF_HOME=/root/.cache/huggingface
-      # Токен для доступа к моделям (если нужно)
       - HF_TOKEN=${HF_TOKEN}
-      # Оптимизация аллокатора CUDA
       - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-      # Отключаем проверку безопасности (если нужно)
-      - DISABLE_SAFETY_CHECKER=True
-
-    # Можно оставить и env_file, но я продублировал в environment
+      - DISABLE_SAFETY_CHECKER=False
     env_file:
       - .env
 
@@ -65,7 +53,7 @@ services:
       - segmentation-network
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import '../models/selection_tool.dart';
 
@@ -23,9 +23,22 @@ class SelectionCanvas extends StatefulWidget {
   final Function(List<Offset>) onRectanglePointsUpdate;
   final VoidCallback? onDrawingStart;
   final VoidCallback? onDrawingEnd;
-  final Future<void> Function(Uint8List orientedBytes, Offset imagePosition, int imageWidth, int imageHeight)? onAutoSegmentTap;
+  final Future<void> Function(
+    Uint8List orientedBytes,
+    Offset imagePosition,
+    int imageWidth,
+    int imageHeight,
+  )?
+  onAutoSegmentTap;
   final VoidCallback? onAutoSegmentComplete = null;
-  final void Function(Uint8List orientedBytes, Offset imagePosition, int imageWidth, int imageHeight, Color pickedColor)? onPickColorTap;
+  final void Function(
+    Uint8List orientedBytes,
+    Offset imagePosition,
+    int imageWidth,
+    int imageHeight,
+    Color pickedColor,
+  )?
+  onPickColorTap;
   final Uint8List? previewImage;
   final bool isSegmentationModeActive;
 
@@ -58,7 +71,8 @@ class SelectionCanvas extends StatefulWidget {
   State<SelectionCanvas> createState() => _SelectionCanvasState();
 }
 
-class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderStateMixin {
+class _SelectionCanvasState extends State<SelectionCanvas>
+    with TickerProviderStateMixin {
   ui.Image? _decodedImage;
   Size _imageSize = const Size(800, 600);
   Uint8List? _orientedImageBytes;
@@ -76,8 +90,6 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
   bool _isPanning = false;
 
   // Guard against tap spam
-  bool _isAwaitingResponse = false;
-
   late AnimationController _selectionMaskController;
 
   @override
@@ -100,8 +112,13 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
     if (widget.previewImage != oldWidget.previewImage) {
       _loadPreviewImage();
     }
-    if (widget.selectionMask != oldWidget.selectionMask && widget.selectionMask.any((m) => m == 1)) {
+    if (widget.selectionMask != oldWidget.selectionMask &&
+        widget.selectionMask.any((m) => m == 1)) {
       _selectionMaskController.forward(from: 0);
+    }
+    if (widget.currentTool != oldWidget.currentTool &&
+        widget.currentTool != SelectionTool.eyedropper) {
+      _decodedImageRgba = null;
     }
   }
 
@@ -122,7 +139,7 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
         });
       }
     } catch (e) {
-      debugPrint('Error loading preview image: $e');
+      if (kDebugMode) debugPrint('Error loading preview image: $e');
       _previewDecodedImage = null;
     }
   }
@@ -137,13 +154,14 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
           _currentScale += scaleDiff * 0.15;
           _currentOffset += offsetDiff * 0.15;
         });
-      } else if (_targetOffset != _currentOffset || _targetScale != _currentScale) {
+      } else if (_targetOffset != _currentOffset ||
+          _targetScale != _currentScale) {
         setState(() {
           _currentScale = _targetScale;
           _currentOffset = _targetOffset;
         });
       }
-    })..start();
+    }).start();
   }
 
   @override
@@ -160,40 +178,60 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
         // Apply EXIF orientation (bakes rotation into the image data)
         final img.Image orientedImg = img.bakeOrientation(decodedImg);
         // Get dimensions AFTER orientation is applied
-        _imageSize = Size(orientedImg.width.toDouble(), orientedImg.height.toDouble());
-        
+        _imageSize = Size(
+          orientedImg.width.toDouble(),
+          orientedImg.height.toDouble(),
+        );
+
         // Store oriented bytes to send to server (syncs with display)
         _orientedImageBytes = Uint8List.fromList(img.encodeJpg(orientedImg));
-        
+
         // Encode back to PNG for display (lossless)
-        final Uint8List orientedBytesPng = Uint8List.fromList(img.encodePng(orientedImg));
+        final Uint8List orientedBytesPng = Uint8List.fromList(
+          img.encodePng(orientedImg),
+        );
         final codec = await ui.instantiateImageCodec(orientedBytesPng);
         final frame = await codec.getNextFrame();
-        final rgba = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        final rgba = await frame.image.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        );
         if (mounted) {
           setState(() {
             _decodedImage = frame.image;
             _decodedImageRgba = rgba;
           });
         }
-        debugPrint('Loaded image with EXIF orientation: ${_imageSize.width}x${_imageSize.height}');
+        if (kDebugMode) {
+          debugPrint(
+            'Loaded image with EXIF orientation: ${_imageSize.width}x${_imageSize.height}',
+          );
+        }
       } else {
         // Fallback: use original bytes without EXIF handling
         _orientedImageBytes = widget.imageBytes;
         final codec = await ui.instantiateImageCodec(widget.imageBytes);
         final frame = await codec.getNextFrame();
-        final rgba = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        final rgba = await frame.image.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        );
         if (mounted) {
           setState(() {
             _decodedImage = frame.image;
             _decodedImageRgba = rgba;
-            _imageSize = Size(frame.image.width.toDouble(), frame.image.height.toDouble());
+            _imageSize = Size(
+              frame.image.width.toDouble(),
+              frame.image.height.toDouble(),
+            );
           });
         }
-        debugPrint('Warning: Could not decode image for EXIF handling, using original: ${_imageSize.width}x${_imageSize.height}');
+        if (kDebugMode) {
+          debugPrint(
+            'Warning: Could not decode image for EXIF handling, using original: ${_imageSize.width}x${_imageSize.height}',
+          );
+        }
       }
     } catch (e) {
-      debugPrint('Error loading image: $e');
+      if (kDebugMode) debugPrint('Error loading image: $e');
     }
   }
 
@@ -206,11 +244,11 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
           onScaleStart: (details) => _onScaleStart(details),
           onScaleUpdate: (details) => _onScaleUpdate(details),
           onScaleEnd: (details) => _onScaleEnd(details),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Container(color: const Color(0xFF151412)),
-                if (_decodedImage != null)
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Container(color: const Color(0xFF151412)),
+              if (_decodedImage != null)
                 CustomPaint(
                   size: Size(constraints.maxWidth, constraints.maxHeight),
                   painter: _SelectionCanvasPainter(
@@ -232,7 +270,6 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
     );
   }
 
-
   void _onTap(Offset position, BoxConstraints constraints) {
     if (widget.currentTool == SelectionTool.interactiveSegmentation &&
         widget.isSegmentationModeActive &&
@@ -241,7 +278,12 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
       final int imageWidth = _imageSize.width.toInt();
       final int imageHeight = _imageSize.height.toInt();
       final orientedBytes = _orientedImageBytes ?? widget.imageBytes;
-      widget.onAutoSegmentTap!(orientedBytes, imagePosition, imageWidth, imageHeight);
+      widget.onAutoSegmentTap!(
+        orientedBytes,
+        imagePosition,
+        imageWidth,
+        imageHeight,
+      );
       return;
     }
 
@@ -249,6 +291,7 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
         widget.onPickColorTap != null) {
       final imagePosition = _screenToImageCoordinates(position, constraints);
       final color = _pickColorAt(imagePosition);
+      _decodedImageRgba = null;
       if (color != null) {
         final orientedBytes = _orientedImageBytes ?? widget.imageBytes;
         widget.onPickColorTap!(
@@ -266,8 +309,14 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
   Color? _pickColorAt(Offset imagePosition) {
     final rgba = _decodedImageRgba;
     if (rgba == null) return null;
-    final int x = imagePosition.dx.round().clamp(0, _imageSize.width.toInt() - 1);
-    final int y = imagePosition.dy.round().clamp(0, _imageSize.height.toInt() - 1);
+    final int x = imagePosition.dx.round().clamp(
+      0,
+      _imageSize.width.toInt() - 1,
+    );
+    final int y = imagePosition.dy.round().clamp(
+      0,
+      _imageSize.height.toInt() - 1,
+    );
     final int width = _imageSize.width.toInt();
     final int byteOffset = (y * width + x) * 4;
     if (byteOffset + 3 >= rgba.lengthInBytes) return null;
@@ -278,7 +327,10 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
     return Color.fromARGB(a, r, g, b);
   }
 
-  Offset _screenToImageCoordinates(Offset screenPosition, BoxConstraints constraints) {
+  Offset _screenToImageCoordinates(
+    Offset screenPosition,
+    BoxConstraints constraints,
+  ) {
     final aspectRatio = _imageSize.width / _imageSize.height;
     double baseWidth, baseHeight;
 
@@ -301,8 +353,14 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
     final pixelsPerImageX = srcWidth / baseWidth;
     final pixelsPerImageY = srcHeight / baseHeight;
 
-    final srcX = (( _imageSize.width - srcWidth) / 2 - _currentOffset.dx * pixelsPerImageX).clamp(0.0, _imageSize.width - srcWidth);
-    final srcY = (( _imageSize.height - srcHeight) / 2 - _currentOffset.dy * pixelsPerImageY).clamp(0.0, _imageSize.height - srcHeight);
+    final srcX =
+        ((_imageSize.width - srcWidth) / 2 -
+                _currentOffset.dx * pixelsPerImageX)
+            .clamp(0.0, _imageSize.width - srcWidth);
+    final srcY =
+        ((_imageSize.height - srcHeight) / 2 -
+                _currentOffset.dy * pixelsPerImageY)
+            .clamp(0.0, _imageSize.height - srcHeight);
 
     final scaleX = baseWidth / srcWidth;
     final scaleY = baseHeight / srcHeight;
@@ -310,7 +368,10 @@ class _SelectionCanvasState extends State<SelectionCanvas> with TickerProviderSt
     final imageX = (screenPosition.dx - baseOffsetX) / scaleX + srcX;
     final imageY = (screenPosition.dy - baseOffsetY) / scaleY + srcY;
 
-    return Offset(imageX.clamp(0.0, _imageSize.width.toDouble()), imageY.clamp(0.0, _imageSize.height.toDouble()));
+    return Offset(
+      imageX.clamp(0.0, _imageSize.width.toDouble()),
+      imageY.clamp(0.0, _imageSize.height.toDouble()),
+    );
   }
 
   void _onScaleStart(ScaleStartDetails details) {
@@ -446,8 +507,15 @@ class _SelectionCanvasPainter extends CustomPainter {
     final pixelsPerImageX = srcWidth / baseWidth;
     final pixelsPerImageY = srcHeight / baseHeight;
 
-    final srcX = ((imageSize.width - srcWidth) / 2 - currentOffset.dx * pixelsPerImageX).clamp(0.0, imageSize.width - srcWidth).toDouble();
-    final srcY = ((imageSize.height - srcHeight) / 2 - currentOffset.dy * pixelsPerImageY).clamp(0.0, imageSize.height - srcHeight).toDouble();
+    final srcX =
+        ((imageSize.width - srcWidth) / 2 - currentOffset.dx * pixelsPerImageX)
+            .clamp(0.0, imageSize.width - srcWidth)
+            .toDouble();
+    final srcY =
+        ((imageSize.height - srcHeight) / 2 -
+                currentOffset.dy * pixelsPerImageY)
+            .clamp(0.0, imageSize.height - srcHeight)
+            .toDouble();
 
     final imagePaint = Paint();
     canvas.drawImageRect(
@@ -507,7 +575,9 @@ class _SelectionCanvasPainter extends CustomPainter {
     final visibleHeight = srcHeight;
 
     final overlayPaint = Paint()
-      ..color = Colors.blue.withValues(alpha: 0.3 * (0.5 + 0.5 * maskAnimationValue))
+      ..color = Colors.blue.withAlpha(
+        (0.3 * (0.5 + 0.5 * maskAnimationValue) * 255).round(),
+      )
       ..style = PaintingStyle.fill;
 
     for (int y = 0; y < imgHeight; y += 4) {

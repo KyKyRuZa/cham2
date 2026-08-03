@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../models/app_state.dart';
+import '../models/settings_state.dart';
 import '../utils/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -92,11 +92,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildLanguageToggle(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, appState, child) {
-        final isEnglish = appState.locale == AppLocale.english;
+    return Consumer<SettingsState>(
+      builder: (context, settingsState, child) {
+        final isEnglish = settingsState.locale == AppLocale.english;
         return GestureDetector(
-          onTap: () => appState.toggleLocale(),
+          onTap: () => settingsState.toggleLocale(),
           child: Container(
             height: 54,
             decoration: BoxDecoration(

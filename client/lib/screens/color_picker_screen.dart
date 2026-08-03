@@ -351,7 +351,7 @@ class _GradientSliderState extends State<_GradientSlider> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))],
+                        boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.35 * 255).round()), blurRadius: 8, offset: const Offset(0, 3))],
                       ),
                     ),
                   ),

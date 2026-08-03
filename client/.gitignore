@@ -63,3 +63,6 @@ MobileSAM/pyvenv.cfg
 # Python cache
 *.pyc
 *.pyo
+
+
+.env

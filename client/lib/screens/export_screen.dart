@@ -5,7 +5,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../models/app_state.dart';
+import '../models/recolor_state.dart';
+import '../models/settings_state.dart';
 import '../utils/app_localizations.dart';
 import '../utils/transitions.dart';
 import 'projects_screen.dart';
@@ -51,8 +52,8 @@ class _ExportScreenState extends State<ExportScreen> {
   @override
   Widget build(BuildContext context) {
     _cacheTranslations(context);
-    final capturedImage = context.select<AppState, Uint8List?>((s) => s.capturedImage);
-    final previewImage = context.select<AppState, Uint8List?>((s) => s.previewImage);
+    final capturedImage = context.select<RecolorState, Uint8List?>((s) => s.capturedImage);
+    final previewImage = context.select<RecolorState, Uint8List?>((s) => s.previewImage);
     final displayImage = _isCompareHeld && capturedImage != null
         ? capturedImage
         : (widget.initialImageBytes ?? previewImage ?? capturedImage);
@@ -65,10 +66,11 @@ class _ExportScreenState extends State<ExportScreen> {
         title: Text(AppLocalizations.tr(context, 'result')),
         leading: GestureDetector(
             onTap: () {
-              final appState = context.read<AppState>();
-              appState.setPreviewImage(null);
-              if (appState.isPreviewMode) {
-                appState.togglePreviewMode();
+              final settingsState = context.read<SettingsState>();
+              final recolorState = context.read<RecolorState>();
+              recolorState.setPreviewImage(null);
+              if (settingsState.isPreviewMode) {
+                settingsState.togglePreviewMode();
               }
               Navigator.pop(context);
             },
@@ -86,7 +88,7 @@ class _ExportScreenState extends State<ExportScreen> {
         actions: [
             GestureDetector(
               onTap: () {
-                context.read<AppState>().setCapturedImage(null);
+                context.read<RecolorState>().setCapturedImage(null);
                 Navigator.pushAndRemoveUntil(
                   context,
                   AppTransitions.fadeRoute(const ProjectsScreen()),
@@ -196,8 +198,8 @@ class _ExportScreenState extends State<ExportScreen> {
   }
 
   Widget _buildCompareButton() {
-    final hasOriginal = context.select<AppState, Uint8List?>((s) => s.capturedImage) != null;
-    final hasRecolored = context.select<AppState, Uint8List?>((s) => s.previewImage) != null;
+    final hasOriginal = context.select<RecolorState, Uint8List?>((s) => s.capturedImage) != null;
+    final hasRecolored = context.select<RecolorState, Uint8List?>((s) => s.previewImage) != null;
 
     if (!hasOriginal || !hasRecolored) {
       return const SizedBox.shrink();
@@ -278,18 +280,15 @@ if (context.mounted) {
     if (imageBytes == null) return;
 
     try {
-      // Create temporary file for sharing
       final tempDir = Directory.systemTemp;
       final file = File('${tempDir.path}/recolored_share_${DateTime.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(imageBytes);
       
       final xFile = XFile(file.path);
-        await Share.shareXFiles(
-          [xFile],
-          text: _cachedShareText,
-        );
+      await SharePlus.instance.share(
+        ShareParams(files: [xFile], text: _cachedShareText),
+      );
       
-      // Clean up temp file after a delay
       Future.delayed(const Duration(seconds: 30), () => file.delete());
     } catch (e) {
       if (context.mounted) {

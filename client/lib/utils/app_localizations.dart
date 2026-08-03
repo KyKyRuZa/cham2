@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/app_state.dart';
-
-enum AppLocale { russian, english }
+import '../models/settings_state.dart';
 
 class AppLocalizations {
   static final Map<AppLocale, Map<String, String>> _translations = {
@@ -203,7 +201,7 @@ class AppLocalizations {
   };
 
   static String tr(BuildContext context, String key) {
-    final locale = context.select<AppState, AppLocale>((s) => s.locale);
+    final locale = context.select<SettingsState, AppLocale>((s) => s.locale);
     return _translations[locale]?[key] ?? key;
   }
 }

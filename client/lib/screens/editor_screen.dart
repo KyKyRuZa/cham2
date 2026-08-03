@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import '../models/app_state.dart';
+import '../models/selection_state.dart';
+import '../models/project_state.dart';
+import '../models/settings_state.dart';
+import '../models/recolor_state.dart';
 import '../models/selection_tool.dart';
 import '../widgets/selection_canvas.dart';
 import '../services/segmentation_service.dart';
@@ -82,10 +86,10 @@ class _EditorScreenState extends State<EditorScreen>
           // Canvas area — isolated rebuild scope via RepaintBoundary
           Positioned.fill(
             bottom: 220,
-            child: Consumer<AppState>(
-              builder: (context, appState, child) {
-                final imageBytes = appState.capturedImage;
-                final previewBytes = appState.previewImage;
+            child: Consumer3<RecolorState, SelectionState, SettingsState>(
+              builder: (context, recolorState, selectionState, settingsState, child) {
+                final imageBytes = recolorState.capturedImage;
+                final previewBytes = recolorState.previewImage;
 
                 if (imageBytes == null) {
                   return const _EmptyCanvasPlaceholder();
@@ -98,14 +102,14 @@ class _EditorScreenState extends State<EditorScreen>
                       key: const ValueKey('selection_canvas'),
                       imageBytes: imageBytes,
                       previewImage: previewBytes,
-                      selectionMask: (appState.isPreviewMode && appState.previewImage != null) ? Uint8List(0) : appState.selectionMask,
+                      selectionMask: (settingsState.isPreviewMode && recolorState.previewImage != null) ? Uint8List(0) : selectionState.selectionMask,
                       currentTool: _selectedTool,
                       brushSize: _brushSize,
                       lassoPoints: const [],
                       polygonPoints: const [],
                       rectanglePoints: const [],
                       boundaryPoints: const [],
-                      onSelectionUpdate: appState.setSelectionMask,
+                      onSelectionUpdate: selectionState.setSelectionMask,
                       onLassoPointsUpdate: (_) {},
                       onPolygonPointsUpdate: (_) {},
                       onRectanglePointsUpdate: (_) {},
@@ -145,9 +149,9 @@ class _EditorScreenState extends State<EditorScreen>
           _buildBottomPanel(),
 
           // Loading overlay with transparent looping video
-          Consumer<AppState>(
-            builder: (context, appState, child) {
-              if (!appState.isLoading) return const SizedBox.shrink();
+          Consumer<SettingsState>(
+            builder: (context, settingsState, child) {
+              if (!settingsState.isLoading) return const SizedBox.shrink();
               return VideoLoadingOverlay(
                 visible: true,
                 message: AppLocalizations.tr(context, 'ai_recoloring'),
@@ -208,12 +212,12 @@ class _EditorScreenState extends State<EditorScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _BottomAction(
+                  label: AppLocalizations.tr(context, 'palette'),
+                  onTap: () => _showColorPalette(),
                   child: const _IconInFrameWidget(
                     assetPath: 'assets/icons/Paint Palette.png',
                     size: 48,
                   ),
-                  label: AppLocalizations.tr(context, 'palette'),
-                  onTap: () => _showColorPalette(context),
                 ),
                 const SizedBox(width: 36),
                 _EyedropperButton(
@@ -232,12 +236,12 @@ class _EditorScreenState extends State<EditorScreen>
                 ),
                 const SizedBox(width: 36),
                 _BottomAction(
+                  label: AppLocalizations.tr(context, 'material'),
+                  onTap: () => _showMaterialSelection(context),
                   child: const _IconInFrameWidget(
                     assetPath: 'assets/icons/Diagonal Lines.png',
                     size: 48,
                   ),
-                  label: AppLocalizations.tr(context, 'material'),
-                  onTap: () => _showMaterialSelection(context),
                 ),
               ],
             ),
@@ -359,7 +363,7 @@ class _EditorScreenState extends State<EditorScreen>
                 boxShadow: isActive
                     ? [
                         BoxShadow(
-                          color: const Color(0xFFFFC107).withValues(alpha: 0.5 * animValue),
+                           color: const Color(0xFFFFC107).withAlpha((0.5 * animValue * 255).round()),
                           blurRadius: 20 * animValue,
                           spreadRadius: 4 * animValue,
                         ),
@@ -392,13 +396,13 @@ class _EditorScreenState extends State<EditorScreen>
     _lastTapImagePosition = imagePosition;
     _lastImageSize = Size(imageWidth.toDouble(), imageHeight.toDouble());
     _lastImageBytes = orientedBytes;
-    final appState = context.read<AppState>();
+    final selectionState = context.read<SelectionState>();
     await _runAIRecolor(
       orientedBytes,
       imagePosition,
       Size(imageWidth.toDouble(), imageHeight.toDouble()),
-      colorName: appState.selectedColorName,
-      fromPipette: appState.isColorFromPipette,
+      colorName: selectionState.selectedColorName,
+      fromPipette: selectionState.isColorFromPipette,
     );
   }
 
@@ -406,31 +410,33 @@ class _EditorScreenState extends State<EditorScreen>
     if (_isProcessing) return;
     _isProcessing = true;
 
-    final appState = context.read<AppState>();
+    final recolorState = context.read<RecolorState>();
+    final selectionState = context.read<SelectionState>();
+    final settingsState = context.read<SettingsState>();
+    final projectState = context.read<ProjectState>();
 
-    if (appState.isLoading) {
+    if (settingsState.isLoading) {
       _isProcessing = false;
       return;
     }
 
-    appState.setLoading(true);
-    appState.setPreviewImage(null);
-    if (appState.isPreviewMode) appState.togglePreviewMode();
+    settingsState.setLoading(true);
+    recolorState.setPreviewImage(null);
+    if (settingsState.isPreviewMode) settingsState.togglePreviewMode();
 
     try {
-      // Use already-oriented bytes from the canvas
-      debugPrint('AI recolor: position=$imagePosition, imageSize=$imageSize');
-      debugPrint('[DEBUG] material=${appState.selectedMaterial}, colorName=$colorName, colorHex=${appState.selectedColor.toARGB32()}, selectedColorName=${appState.selectedColorName}');
+      if (kDebugMode) debugPrint('AI recolor: position=$imagePosition, imageSize=$imageSize');
+      if (kDebugMode) debugPrint('[DEBUG] material=${settingsState.selectedMaterial}, colorName=$colorName, colorHex=${selectionState.selectedColor.toARGB32()}, selectedColorName=${selectionState.selectedColorName}');
 
-final resultBytes = await _segmentationService.segmentObject(
+      final resultBytes = await _segmentationService.segmentObject(
         imageBytes: orientedBytes,
         imagePosition: imagePosition,
         imageWidth: imageSize.width.toInt(),
         imageHeight: imageSize.height.toInt(),
-        material: appState.selectedMaterial,
-        colorHex: appState.selectedColor.toARGB32(),
+        material: settingsState.selectedMaterial,
+        colorHex: selectionState.selectedColor.toARGB32(),
         colorName: colorName,
-        patina: appState.patinaMode,
+        patina: settingsState.patinaMode,
         objectName: 'object',
         strength: 1.0,
         guidanceScale: 5.0,
@@ -440,14 +446,14 @@ final resultBytes = await _segmentationService.segmentObject(
 
       if (!mounted) {
         _isProcessing = false;
-        appState.setLoading(false);
+        settingsState.setLoading(false);
         return;
       }
 
       if (resultBytes != null) {
-        appState.setPreviewImage(resultBytes);
-        if (!appState.isPreviewMode) appState.togglePreviewMode();
-        appState.addProject(resultBytes);
+        recolorState.setPreviewImage(resultBytes);
+        if (!settingsState.isPreviewMode) settingsState.togglePreviewMode();
+        projectState.addProject(resultBytes);
 
         final imageProvider = MemoryImage(resultBytes);
         await precacheImage(imageProvider, context);
@@ -469,7 +475,7 @@ final resultBytes = await _segmentationService.segmentObject(
                 context, 'ai_recolor_error'))));
       }
     } catch (e) {
-      debugPrint('Ошибка AI: $e');
+      if (kDebugMode) debugPrint('Ошибка AI: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -478,7 +484,7 @@ final resultBytes = await _segmentationService.segmentObject(
     } finally {
       _isProcessing = false;
       if (mounted) {
-        appState.setLoading(false);
+        settingsState.setLoading(false);
       }
     }
   }
@@ -499,10 +505,10 @@ final resultBytes = await _segmentationService.segmentObject(
       _isSegmentationModeActive = false;
     });
 
-    final appState = context.read<AppState>();
+    final selectionState = context.read<SelectionState>();
     final colorHex = '#${pickedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
-    appState.setSelectedColor(pickedColor);
-    appState.setSelectedColorName(colorHex, fromPipette: true);
+    selectionState.setSelectedColor(pickedColor);
+    selectionState.setSelectedColorName(colorHex, fromPipette: true);
 
     _lastTapImagePosition = imagePosition;
     _lastImageSize = Size(imageWidth.toDouble(), imageHeight.toDouble());
@@ -534,7 +540,7 @@ final resultBytes = await _segmentationService.segmentObject(
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: pickedColor.withValues(alpha: 0.5),
+                    color: pickedColor.withAlpha((0.5 * 255).round()),
                     blurRadius: 12,
                     spreadRadius: 2,
                   ),
@@ -579,17 +585,17 @@ final resultBytes = await _segmentationService.segmentObject(
     );
     if (!mounted) return;
     if (result != null) {
-      if (mounted) {
-        context.read<AppState>().setSelectedMaterial(result);
+      if (context.mounted) {
+        context.read<SettingsState>().setSelectedMaterial(result);
       }
     }
     if (mounted) {
-      await _showColorPalette(context);
+      await _showColorPalette();
     }
   }
 
-  Future<void> _showColorPalette(BuildContext context) async {
-    final appState = context.read<AppState>();
+  Future<void> _showColorPalette() async {
+    final selectionState = context.read<SelectionState>();
     final result = await showModalBottomSheet<Map<String, dynamic>?>(
       context: context,
       isScrollControlled: true,
@@ -598,9 +604,9 @@ final resultBytes = await _segmentationService.segmentObject(
     );
     if (!mounted) return;
     if (result != null) {
-      appState.setSelectedColor(result['color']);
+      selectionState.setSelectedColor(result['color']);
       final colorName = result['colorName'] as String?;
-      appState.setSelectedColorName(colorName);
+      selectionState.setSelectedColorName(colorName);
       if (_lastImageBytes != null && _lastTapImagePosition != null && _lastImageSize != null) {
         await _runAIRecolor(_lastImageBytes!, _lastTapImagePosition!, _lastImageSize!, colorName: colorName);
       }
@@ -608,10 +614,18 @@ final resultBytes = await _segmentationService.segmentObject(
   }
 
   void _onBackToCamera(BuildContext context) {
-    final appState = context.read<AppState>();
-    appState.setCapturedImage(null);
-    appState.resetSelection();
-    appState.setStage(AppStage.camera);
+    final recolorState = context.read<RecolorState>();
+    final selectionState = context.read<SelectionState>();
+    final settingsState = context.read<SettingsState>();
+    _lastTapImagePosition = null;
+    _lastImageSize = null;
+    _lastImageBytes = null;
+    recolorState.setCapturedImage(null);
+    selectionState.resetSelection();
+    if (settingsState.isPreviewMode) {
+      settingsState.togglePreviewMode();
+    }
+    recolorState.setStage(AppStage.camera);
     Navigator.pushReplacement(
       context,
       AppTransitions.fadeRoute(const CameraPage()),

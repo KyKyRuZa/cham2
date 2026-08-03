@@ -69,7 +69,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
   }
 
   void _updateHexController() {
-    final hexStr = _selectedColor.value
+    final hexStr = _selectedColor.toARGB32()
         .toRadixString(16)
         .substring(2)
         .toUpperCase();
@@ -154,17 +154,19 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                       prefixText: '#',
                     ),
                     onChanged: (value) {
-                      if (value.length == 6) {
-                        try {
-                          final colorValue = int.parse('FF$value', radix: 16);
-                          setState(() {
-                            _selectedColor = Color(colorValue);
-                          });
-                          if (widget.onColorChanged != null) {
-                            widget.onColorChanged!(_selectedColor);
-                          }
-                        } catch (e) {}
-                      }
+                       if (value.length == 6) {
+                         try {
+                           final colorValue = int.parse('FF$value', radix: 16);
+                           setState(() {
+                             _selectedColor = Color(colorValue);
+                           });
+                           if (widget.onColorChanged != null) {
+                             widget.onColorChanged!(_selectedColor);
+                           }
+                         } catch (e) {
+                           // Invalid hex, ignore
+                         }
+                       }
                     },
                   ),
                   const SizedBox(height: 16),
@@ -228,7 +230,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                       itemCount: _presetColors.length,
                       itemBuilder: (context, index) {
                         final color = _presetColors[index];
-                        final isSelected = color.value == _selectedColor.value;
+                        final isSelected = color.toARGB32() == _selectedColor.toARGB32();
 
                         return TweenAnimationBuilder<double>(
                           duration: Duration(milliseconds: 200 + (index * 30)),
@@ -275,9 +277,9 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildRgbValue('R', _selectedColor.red),
-                      _buildRgbValue('G', _selectedColor.green),
-                      _buildRgbValue('B', _selectedColor.blue),
+                      _buildRgbValue('R', (_selectedColor.r * 255.0).round().clamp(0, 255)),
+                      _buildRgbValue('G', (_selectedColor.g * 255.0).round().clamp(0, 255)),
+                      _buildRgbValue('B', (_selectedColor.b * 255.0).round().clamp(0, 255)),
                     ],
                   ),
                   const SizedBox(height: 24),
