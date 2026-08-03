@@ -38,6 +38,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   double _maxZoom = 4.0;
   bool _isLandscape = false;
   bool _isNativeCameraOpen = false;
+  bool _didOpenNativeCamera = false;
 
   bool get _isIOS => Theme.of(context).platform == TargetPlatform.iOS;
 
@@ -46,7 +47,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _updateOrientation();
-    if (_isIOS) {
+    if (_isIOS && !_didOpenNativeCamera) {
+      _didOpenNativeCamera = true;
       _openNativeCamera();
     } else {
       _initializeCamera();
@@ -261,6 +263,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             duration: const Duration(milliseconds: 120),
           ),
         );
+      } else {
+        Navigator.of(context).pushAndRemoveUntil(
+          AppTransitions.fadeRoute(const ProjectsScreen()),
+          (route) => false,
+        );
       }
     } catch (e) {
       debugPrint('Error opening native camera: $e');
@@ -408,7 +415,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                         iconPath: 'assets/icons/Close.png',
                         onTap: () {
                           if (!mounted) return;
-                          Navigator.of(context).pop();
+                          Navigator.of(context).pushAndRemoveUntil(
+                            AppTransitions.fadeRoute(const ProjectsScreen()),
+                            (route) => false,
+                          );
                         },
                       ),
                   if (!_isIOS)
