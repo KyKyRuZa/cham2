@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../utils/app_localizations.dart';
@@ -17,6 +18,7 @@ class _MaterialSelectionScreenState extends State<MaterialSelectionScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     _selectedMaterial = 'wood';
   }
 

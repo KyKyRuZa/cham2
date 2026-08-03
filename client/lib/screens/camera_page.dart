@@ -258,7 +258,7 @@ class _CameraPageState extends State<CameraPage> {
       backgroundColor: const Color(0xFF151412),
       body: Stack(
         children: [
-          Center(
+          SizedBox.expand(
             child: _isCameraInitialized && _cameraController != null
                 ? GestureDetector(
                     onScaleStart: (details) {

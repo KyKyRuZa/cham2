@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../utils/app_localizations.dart';
@@ -18,7 +19,13 @@ class _ColorPaletteScreenState extends State<ColorPaletteScreen> {
 
   List<_ColorCategory>? _colorCategories;
 
-@override
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  }
+
+  @override
   Widget build(BuildContext context) {
     _colorCategories = [
       _ColorCategory(AppLocalizations.tr(context, 'color_categories_red'), [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:flutter/services.dart';
 
 class ColorPickerScreen extends StatefulWidget {
   final Color initialColor;
@@ -28,6 +29,7 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     final hsv = HSVColor.fromColor(widget.initialColor);
     hue = hsv.hue;
     saturation = hsv.saturation * 100;
