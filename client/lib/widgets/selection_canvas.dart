@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -431,21 +432,13 @@ class _SelectionCanvasPainter extends CustomPainter {
 
     if (image == null) return;
 
-    final aspectRatio = imageSize.width / imageSize.height;
-    double baseWidth, baseHeight;
-
-    if (size.width / size.height > aspectRatio) {
-      baseWidth = size.width;
-      baseHeight = baseWidth / aspectRatio;
-    } else {
-      baseHeight = size.height;
-      baseWidth = baseHeight * aspectRatio;
-    }
-
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    final baseOffsetX = centerX - baseWidth / 2;
-    final baseOffsetY = centerY - baseHeight / 2;
+    final containScaleX = size.width / imageSize.width;
+    final containScaleY = size.height / imageSize.height;
+    final containScale = math.min(containScaleX, containScaleY);
+    final baseWidth = imageSize.width * containScale;
+    final baseHeight = imageSize.height * containScale;
+    final baseOffsetX = (size.width - baseWidth) / 2;
+    final baseOffsetY = (size.height - baseHeight) / 2;
 
     final srcWidth = imageSize.width / currentScale;
     final srcHeight = imageSize.height / currentScale;

@@ -46,7 +46,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _updateOrientation();
-    if (!_isIOS) {
+    if (_isIOS) {
+      _openNativeCamera();
+    } else {
       _initializeCamera();
     }
   }
