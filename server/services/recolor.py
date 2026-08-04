@@ -6,6 +6,7 @@ import torch
 from io import BytesIO
 from dataclasses import dataclass
 from PIL import Image, ImageOps
+from fastapi import HTTPException
 
 from server.state import _predictor, _pipe, _device, _request_counter
 from server.config import MAX_IMAGE_SIZE_BYTES, MAX_IMAGE_DIMENSION

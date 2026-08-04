@@ -2,6 +2,8 @@ import time
 import traceback
 import logging
 import math
+import gc
+import torch
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from server.config import VALID_API_KEYS, ALLOWED_MATERIALS, MAX_IMAGE_SIZE_BYTES, MAX_IMAGE_DIMENSION, REQUEST_TIMEOUT
