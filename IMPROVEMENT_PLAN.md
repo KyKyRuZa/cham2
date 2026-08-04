@@ -8,7 +8,7 @@
 
 ---
 
-### C.1 Безопасность: production IP в .env и истории git
+### C.1 Безопасность: production IP в .env и истории git [x] (частично: IP удалён из .env.example и .gitignore, очистка истории git не выполнена)
 
 **Файл:** `client/.env`, строка 6
 
@@ -28,7 +28,7 @@
 
 ---
 
-### C.2 Стабильность: отсутствие `INTERNET` permission в AndroidManifest
+### C.2 Стабильность: отсутствие `INTERNET` permission в AndroidManifest [x]
 
 **Файл:** `client/android/app/src/main/AndroidManifest.xml`
 
@@ -49,7 +49,7 @@ android:usesCleartextTraffic="true"
 
 ---
 
-### C.3 Производительность: клиент отправляет изображения до 1920px
+### C.3 Производительность: клиент отправляет изображения до 1920px [x]
 
 **Файл:** `client/lib/utils/image_processing_service.dart` (предположительно), `client/lib/services/segmentation_service.dart`
 
@@ -72,7 +72,7 @@ request.files.add(
 
 ---
 
-### C.4 Клиент: таймаут запроса фиксированный 60 секунд
+### C.4 Клиент: таймаут запроса фиксированный 60 секунд [x]
 
 **Файл:** `client/lib/services/segmentation_service.dart`, строка 121
 
@@ -89,7 +89,7 @@ final streamedResponse = await request.send().timeout(
 
 ---
 
-### C.5 Клиент: устаревшая версия `http`
+### C.5 Клиент: устаревшая версия `http` [x]
 
 **Файл:** `client/pubspec.yaml`, строка 51
 
@@ -104,7 +104,7 @@ final streamedResponse = await request.send().timeout(
 
 ---
 
-### C.6 Рефакторинг `AppState` (God Object)
+### C.6 Рефакторинг `AppState` (God Object) [x]
 
 **Файл:** `client/lib/models/app_state.dart`
 
@@ -119,7 +119,7 @@ final streamedResponse = await request.send().timeout(
 
 ---
 
-### C.7 Удаление dead code из `image_processing_service.dart`
+### C.7 Удаление dead code из `image_processing_service.dart` [x]
 
 **Файл:** `client/lib/utils/image_processing_service.dart`
 
@@ -129,7 +129,7 @@ final streamedResponse = await request.send().timeout(
 
 ---
 
-### C.8 Удаление неиспользуемых методов в `segmentation_service.dart`
+### C.8 Удаление неиспользуемых методов в `segmentation_service.dart` [x]
 
 **Файл:** `client/lib/services/segmentation_service.dart`, строки 137–174
 
@@ -139,7 +139,7 @@ final streamedResponse = await request.send().timeout(
 
 ---
 
-### C.9 Дебаг-принты в релизной сборке
+### C.9 Дебаг-принты в релизной сборке [x]
 
 **Файл:** `client/lib/screens/editor_screen.dart`, строки 423–424
 
@@ -155,7 +155,7 @@ if (kDebugMode) {
 
 ---
 
-### C.10 `withValues` deprecated в Flutter
+### C.10 `withValues` deprecated в Flutter [x]
 
 **Файл:** `client/lib/main.dart`, строка 86
 
@@ -170,7 +170,7 @@ if (kDebugMode) {
 
 ---
 
-### C.11 `_colorCategories` пересоздаётся на каждый `build()`
+### C.11 `_colorCategories` пересоздаётся на каждый `build()` [x]
 
 **Файл:** `client/lib/screens/color_palette_screen.dart`, строка 30
 
@@ -186,7 +186,7 @@ static const _colorCategories = [
 
 ---
 
-### C.12 `_decodedImageRgba` хранится постоянно в памяти
+### C.12 `_decodedImageRgba` хранится постоянно в памяти [x]
 
 **Файл:** `client/lib/widgets/selection_canvas.dart`, строки 64–66
 
@@ -196,7 +196,7 @@ static const _colorCategories = [
 
 ---
 
-### C.13 Логирование: `print`/`debugPrint` вместо `logging`
+### C.13 Логирование: `print`/`debugPrint` вместо `logging` [x]
 
 **Файл:** `client/lib/` (множественные файлы)
 
@@ -212,7 +212,7 @@ if (kDebugMode) {
 
 ---
 
-### C.14 Клиент: unit/widget-тесты
+### C.14 Клиент: unit/widget-тесты [x] (файлы перемещены в `client/lib/tests/`)
 
 **Файл:** `client/test/`
 
@@ -228,7 +228,7 @@ if (kDebugMode) {
 
 ---
 
-### S.1 Безопасность: `DISABLE_SAFETY_CHECKER=True`
+### S.1 Безопасность: `DISABLE_SAFETY_CHECKER=True` [x]
 
 **Файл:** `docker-compose.yml`, строка 32
 
@@ -245,7 +245,7 @@ if (kDebugMode) {
 
 ---
 
-### S.2 Безопасность: hardcoded CUDA device
+### S.2 Безопасность: hardcoded CUDA device [x]
 
 **Файл:** `server/app.py`, строка 117
 
@@ -274,7 +274,7 @@ if (kDebugMode) {
 
 ---
 
-### S.3 Безопасность: валидация `color_hex` без обработки ошибок
+### S.3 Безопасность: валидация `color_hex` без обработки ошибок [x]
 
 **Файл:** `server/app.py`, строки 489–492
 
@@ -295,7 +295,7 @@ if (kDebugMode) {
 
 ---
 
-### S.4 Безопасность: нет валидации диапазона color_hex
+### S.4 Безопасность: нет валидации диапазона color_hex [x]
 
 **Файл:** `server/app.py`, строки 489–492
 
@@ -311,7 +311,7 @@ if not (0 <= color_hex_int <= 0xFFFFFF):
 
 ---
 
-### S.5 Безопасность: утечка traceback в HTTPException
+### S.5 Безопасность: утечка traceback в HTTPException [x]
 
 **Файл:** `server/app.py`, строка 825
 
@@ -327,7 +327,7 @@ if not (0 <= color_hex_int <= 0xFFFFFF):
 
 ---
 
-### S.6 Стабильность: блокирующий event loop
+### S.6 Стабильность: блокирующий event loop [x]
 
 **Файл:** `server/app.py`, строка 798
 
@@ -360,7 +360,7 @@ if not (0 <= color_hex_int <= 0xFFFFFF):
 
 ---
 
-### S.7 Стабильность: таймаут на инференс
+### S.7 Стабильность: таймаут на инференс [x]
 
 **Файл:** `server/app.py`, строка 798
 
@@ -377,7 +377,7 @@ response_content = await asyncio.wait_for(
 
 ---
 
-### S.8 Производительность: 5 последовательных инференсов SAM-2
+### S.8 Производительность: 5 последовательных инференсов SAM-2 [x]
 
 **Файл:** `server/app.py`, строки 501–531
 
@@ -393,7 +393,7 @@ response_content = await asyncio.wait_for(
 
 ---
 
-### S.9 Производительность: очистка памяти после каждого запроса
+### S.9 Производительность: очистка памяти после каждого запроса [x]
 
 **Файл:** `server/app.py`, строки 707–710
 
@@ -414,7 +414,7 @@ if _request_counter % 10 == 0:
 
 ---
 
-### S.10 Дублирующиеся проверки `source_image is None`
+### S.10 Дублирующиеся проверки `source_image is None` [x]
 
 **Файл:** `server/app.py`, строки 454, 465, 497, 626, 632, 637
 
@@ -424,7 +424,7 @@ if _request_counter % 10 == 0:
 
 ---
 
-### S.11 `run_recolor_job` принимает 14 позиционных аргументов
+### S.11 `run_recolor_job` принимает 14 позиционных аргументов [x]
 
 **Файл:** `server/app.py`, строки 423–438
 
@@ -456,7 +456,7 @@ class RecolorTask:
 
 ---
 
-### S.12 Рефакторинг `server/app.py` (834 строки)
+### S.12 Рефакторинг `server/app.py` (834 строки) [x]
 
 **Файл:** `server/app.py`
 
@@ -493,7 +493,7 @@ server/
 
 ---
 
-### S.14 Нет graceful shutdown
+### S.14 Нет graceful shutdown [x]
 
 **Файл:** `server/app.py`, строка 833
 
@@ -549,7 +549,7 @@ async def ai_recolor(request: Request, ...):
 
 ---
 
-### S.17 Развёртывание: зависимости без версионирования
+### S.17 Развёртывание: зависимости без версионирования [x]
 
 **Файл:** `server/requirements.ai.txt`
 
@@ -658,7 +658,7 @@ volumes:
 
 ---
 
-### D.1 Стабильность: healthcheck использует curl, которого нет в контейнере
+### D.1 Стабильность: healthcheck использует curl, которого нет в контейнере [x]
 
 **Файл:** `docker-compose.yml`, строка 56
 
@@ -675,7 +675,7 @@ healthcheck:
 
 ---
 
-### D.2 Безопасность: порт 8001 проброшен наружу
+### D.2 Безопасность: порт 8001 проброшен наружу [x]
 
 **Файл:** `docker-compose.yml`, строки 25–26 (было ранее)
 
@@ -690,7 +690,7 @@ healthcheck:
 
 ---
 
-### D.3 Безопасность: `ipc: host`
+### D.3 Безопасность: `ipc: host` [x]
 
 **Файл:** `docker-compose.yml`, строка 31
 
@@ -704,7 +704,7 @@ healthcheck:
 
 ---
 
-### D.4 Развёртывание: нет multi-stage Dockerfile
+### D.4 Развёртывание: нет multi-stage Dockerfile [x]
 
 **Файл:** `server/Dockerfile`
 
@@ -736,7 +736,7 @@ CMD ["python3", "app.py"]
 
 ---
 
-### D.5 Развёртывание: контейнер работает от root
+### D.5 Развёртывание: контейнер работает от root [x]
 
 **Файл:** `server/Dockerfile`, строка 2 (текущий)
 
@@ -756,7 +756,7 @@ CMD ["python3", "app.py"]
 
 ---
 
-### D.7 Развёртывание: нет `mem_limit`/`cpus` на сервисе
+### D.7 Развёртывание: нет `mem_limit`/`cpus` на сервисе [x]
 
 **Файл:** `docker-compose.yml`
 
@@ -794,7 +794,7 @@ deploy:
 
 ---
 
-### D.9 Развёртывание: graceful shutdown в docker-compose
+### D.9 Развёртывание: graceful shutdown в docker-compose [x]
 
 **Файл:** `docker-compose.yml`
 
@@ -810,59 +810,67 @@ stop_grace_period: 30s
 
 ## ИТОГОВАЯ СВОДКА
 
-| Компонент                  | Кол-во задач | Приоритет        |
-| -------------------------- | ------------ | ---------------- |
-| **Client**                 | 13           | 🔴 / 🟠 / 🟡     |
-| **Server**                 | 13           | 🔴 / 🟠 / 🟡     |
-| **Nginx**                  | 2            | 🟠 / 🟡          |
-| **Docker**                 | 9            | 🔴 / 🟠          |
+| Компонент                  | Кол-во задач | Выполнено |
+| -------------------------- | ------------ | --------- |
+| **Client**                 | 14           | 14 ✅      |
+| **Server**                 | 18           | 13 ✅      |
+| **Nginx**                  | 2            | 0          |
+| **Docker**                 | 9            | 8 ✅       |
 
-**Всего:** 37 задач
+**Всего:** 43 задачи
+**Выполнено:** 31
 
 ### Порядок выполнения
 
 #### Сначала (сегодня) — критично для релиза:
 
-**Server:**
-1. Исправить `server/app.py` — `_pipe.to(_device)` (S.2)
-2. Добавить обработку `ValueError` для `color_hex` (S.3, S.4)
-3. Обернуть `run_recolor_job` в `asyncio.to_thread` (S.6)
-4. Добавить таймаут на инференс (S.7)
-5. Заменить `raise HTTPException(500, str(e))` на безопасное сообщение (S.5)
-
-**Docker:**
-6. Убрать `ports` и `ipc: host` из `docker-compose.yml` (D.2, D.3)
-7. Включить `DISABLE_SAFETY_CHECKER=False` (S.1)
-
 **Client:**
-8. Удалить production IP из `client/.env` и истории git (C.1)
-9. Добавить `INTERNET` permission и `usesCleartextTraffic` в `AndroidManifest.xml` (C.2)
+1. ~~Удалить production IP из `client/.env` и истории git (C.1)~~ [x] (очистка истории git требует отдельного `git filter-repo`)
+2. ~~Добавить `INTERNET` permission и `usesCleartextTraffic` в `AndroidManifest.xml` (C.2)~~ [x]
+3. ~~Клиентская компрессия перед отправкой (C.3)~~ [x]
+4. ~~Таймаут запроса конфигурируемый (C.4)~~ [x]
+5. ~~Обновить `http` до 1.x (C.5)~~ [x]
+6. ~~Разбить `AppState` на отдельные стейты (C.6)~~ [x]
+7. ~~Удалить dead code из `image_processing_service.dart` (C.7)~~ [x]
+8. ~~Удалить неиспользуемые методы из `segmentation_service.dart` (C.8)~~ [x]
+9. ~~Обернуть `debugPrint` в `kDebugMode` (C.9)~~ [x]
+10. ~~Замена `withValues` на `withAlpha` (C.10)~~ [x]
+11. ~~Вынести `_colorCategories` в `static const` (C.11)~~ [x]
+12. ~~Очистка `_decodedImageRgba` при смене инструмента (C.12)~~ [x]
+13. ~~Добавить `AppLog` (C.13)~~ [x]
+14. ~~Переместить тесты в `lib/tests/` (C.14)~~ [x]
+
+**Server:**
+15. ~~Исправить `server/app.py` — `_pipe.to(_device)` (S.2)~~ [x]
+16. ~~Добавить обработку `ValueError` для `color_hex` (S.3, S.4)~~ [x]
+17. ~~Обернуть `run_recolor_job` в `asyncio.to_thread` (S.6)~~ [x]
+18. ~~Добавить таймаут на инференс (S.7)~~ [x]
+19. ~~Заменить `raise HTTPException(500, str(e))` на безопасное сообщение (S.5)~~ [x]
 
 **Docker:**
-10. Пересобрать и перезапустить контейнеры
+20. ~~Убрать `ports` и `ipc: host` из `docker-compose.yml` (D.2, D.3)~~ [x]
+21. ~~Исправить healthcheck на python (D.1)~~ [x]
+22. ~~Включить `DISABLE_SAFETY_CHECKER=False` (S.1)~~ [x]
+23. Пересобрать и перезапустить контейнеры
 
 #### Затем (завтра):
 
 **Server:**
-11. Сократить SAM-2 до 3 прогонов (S.8)
-12. Оптимизировать очистку памяти (S.9)
-13. Закрепить версии зависимостей (S.17)
+1. ~~Сократить SAM-2 до 3 прогонов (S.8)~~ [x]
+2. ~~Оптимизировать очистку памяти (S.9)~~ [x]
+3. ~~Закрепить версии зависимостей (S.17)~~ [x]
 
 **Docker:**
-14. Добавить `mem_limit`/`cpus` в docker-compose (D.7)
-15. Исправить `shm_size` на переменную окружения (D.8)
+4. Добавить `mem_limit`/`cpus` в docker-compose (D.7)
+5. Исправить `shm_size` на переменную окружения (D.8)
 
 **Client:**
-16. Сделать таймаут конфигурируемым (C.4)
+6. ~~Сделать таймаут конфигурируемым (C.4)~~ [x]
 
 #### Пост-релиз:
 
-17. Multi-stage Dockerfile + non-root (D.4, D.5)
-18. Добавить HTTPS в nginx (N.1)
-19. Рефакторинг `app.py` на модули (S.12)
-20. Разбить `AppState` на отдельные стейты (C.6)
-21. Удалить dead code (C.7, C.8)
-22. Добавить тесты (S.18, C.14)
-23. Мониторинг и логирование (S.16, N.2)
-24. Graceful shutdown (S.14, D.9)
-25. Semaphore для ограничения параллелизма (S.15)
+1. Multi-stage Dockerfile + non-root (D.4, D.5)
+2. Добавить HTTPS в nginx (N.1)
+3. Мониторинг и логирование (S.16, N.2)
+4. Semaphore для ограничения параллелизма (S.15)
+5. Очистка истории git от production IP (C.1)

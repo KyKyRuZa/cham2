@@ -23,10 +23,11 @@ services:
     container_name: segment-ai
     restart: unless-stopped
     shm_size: 16g
+    stop_grace_period: 30s
 
     environment:
       - PORT=8001
-      - HF_HOME=/root/.cache/huggingface
+      - HF_HOME=/home/appuser/.cache/huggingface
       - HF_TOKEN=${HF_TOKEN}
       - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
       - DISABLE_SAFETY_CHECKER=False
@@ -35,6 +36,9 @@ services:
 
     deploy:
       resources:
+        limits:
+          memory: 12G
+          cpus: "4"
         reservations:
           devices:
             - driver: nvidia
@@ -43,7 +47,7 @@ services:
 
     volumes:
       # Кеш моделей Hugging Face (уже скачаны)
-      - ./hf_cache:/root/.cache/huggingface
+      - ./hf_cache:/home/appuser/.cache/huggingface
       # Debug-артефакты запросов (видно на хосте в ./server/debug_output/)
       - ./server/debug_output:/app/debug_output
       # (Опционально) для быстрой правки кода без пересборки:
