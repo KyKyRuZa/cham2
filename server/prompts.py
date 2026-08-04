@@ -134,6 +134,7 @@ _CSS_NAMED_COLORS = [
     ((201, 166, 107), "brass"),
     ((184, 115, 51), "copper"),
     ((192, 192, 192), "silver"),
+    ((128, 128, 128), "gray"),
     ((119, 136, 153), "light slate gray"),
     ((105, 105, 105), "dim gray"),
 
@@ -187,6 +188,23 @@ def get_color_hex_name(hex_color: int) -> str:
     sat = 0.0 if mx == 0 else (mx - mn) / mx
     val = mx / 255.0
 
+    # Специальные светло-серые цвета металлов (проверяем первыми,
+    # даже если цвет почти серый, чтобы нержавейка/титан не терялись в «white/gray»)
+    metal_grays = {
+        (232, 236, 239): "stainless_steel",
+        (224, 224, 224): "silver",
+        (110, 116, 120): "titanium",
+    }
+    best_metal_dist = float('inf')
+    best_metal_name = None
+    for (mr, mg, mb), name in metal_grays.items():
+        dist = (r - mr) ** 2 + (g - mg) ** 2 + (b - mb) ** 2
+        if dist < best_metal_dist:
+            best_metal_dist = dist
+            best_metal_name = name
+    if best_metal_dist < 500:
+        return best_metal_name
+
     # Серые оттенки (низкая насыщенность)
     if sat < 0.12:
         for threshold, name in _GRAY_COLORS:
@@ -212,6 +230,22 @@ def get_color_hex_name(hex_color: int) -> str:
                 best_name = name
         if best_dist < 2500:
             return best_name
+
+    # Специальные светло-серые цвета металлов (проверяем до общего поиска)
+    metal_grays = {
+        (232, 236, 239): "stainless_steel",
+        (224, 224, 224): "silver",
+        (110, 116, 120): "titanium",
+    }
+    best_metal_dist = float('inf')
+    best_metal_name = None
+    for (mr, mg, mb), name in metal_grays.items():
+        dist = (r - mr) ** 2 + (g - mg) ** 2 + (b - mb) ** 2
+        if dist < best_metal_dist:
+            best_metal_dist = dist
+            best_metal_name = name
+    if best_metal_dist < 2500:
+        return best_metal_name
 
     # Находим ближайший цвет из таблицы по евклидову расстоянию в RGB
     best_name = _CSS_NAMED_COLORS[0][1]
