@@ -294,7 +294,7 @@ def run_recolor_job(task: RecolorTask) -> bytes:
 
     # 9. Возврат PNG
     buf = BytesIO()
-    result.save(buf, format="PNG")
+    result.save(buf, format="PNG", optimize=True)
     buf.seek(0)
     total_time = time.time() - start_time
     logger.info(f"✅ Request completed in {total_time:.2f}s total")

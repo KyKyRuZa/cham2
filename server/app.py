@@ -38,6 +38,8 @@ async def lifespan(app: FastAPI):
     if _device == "cuda":
         torch.backends.cudnn.benchmark = True
 
+    torch.set_num_threads(8)  # ограничиваем потоки CPU, чтобы не конкурировать с GPU
+
     _register_signals()
 
     # Загрузка SAM-2

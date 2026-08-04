@@ -83,7 +83,7 @@ async def ai_recolor(
     guidance_scale = float(min(20.0, max(1.0, guidance_scale)))
 
     # num_inference_steps ограничиваем диапазоном [6, 50]
-    num_inference_steps = int(min(50, max(6, num_inference_steps)))
+    num_inference_steps = int(min(50, max(4, num_inference_steps)))
 
     # Материал должен быть из разрешённого набора
     if material not in ALLOWED_MATERIALS:
