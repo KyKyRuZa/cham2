@@ -38,15 +38,10 @@ WORKDIR /app
 # Copy only the installed virtualenv from builder
 COPY --from=builder /opt/venv /opt/venv
 
-COPY app.py .
-COPY config.py .
-COPY prompts.py .
-COPY state.py .
-COPY routes/ ./routes/
-COPY services/ ./services/
+COPY server/ ./server/
 
 RUN chown -R appuser:appuser /app
 USER appuser
 ENV PATH=/opt/venv/bin:$PATH
 EXPOSE 8001
-CMD ["python3", "app.py"]
+CMD ["python3", "-m", "server.app"]
