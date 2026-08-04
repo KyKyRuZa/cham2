@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import Response
 from server.config import VALID_API_KEYS, ALLOWED_MATERIALS, MAX_IMAGE_SIZE_BYTES, MAX_IMAGE_DIMENSION, REQUEST_TIMEOUT
 from server.services.recolor import run_recolor_job, RecolorTask
-from server.state import _predictor, _pipe, _shutdown_event
+from server.state import _predictor, _pipe, _device, _shutdown_event
 import asyncio
 
 logger = logging.getLogger(__name__)
