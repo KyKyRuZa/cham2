@@ -30,10 +30,12 @@ def verify_api_key(x_api_key: str | None = None):
 
 @router.get("/health")
 async def health():
+    models_loaded = _predictor is not None and _pipe is not None
+    logger.info(f"📊 Health check: device={_device}, predictor={_predictor is not None}, pipe={_pipe is not None}, models_loaded={models_loaded}")
     return {
         "status": "healthy",
         "device": _device,
-        "models_loaded": _predictor is not None and _pipe is not None
+        "models_loaded": models_loaded,
     }
 
 
@@ -59,6 +61,11 @@ async def ai_recolor(
 ):
     start_time = time.time()
     logger.info("📥 ===== NEW REQUEST =====")
+    if torch.cuda.is_available():
+        alloc = torch.cuda.memory_allocated() / 1024**3
+        reserved = torch.cuda.memory_reserved() / 1024**3
+        logger.info(f"   GPU memory: allocated={alloc:.2f}GB, reserved={reserved:.2f}GB")
+    logger.info(f"   Models: predictor={_predictor is not None}, pipe={_pipe is not None}")
     logger.debug(f"   Filename: {image.filename}")
     logger.debug(f"   point_x: {point_x}, point_y: {point_y}")
     logger.debug(f"   object_name: {object_name}, material: {material}, color_hex: {color_hex}, color_name: {color_name}, color_rgb: ({color_r}, {color_g}, {color_b}), strength: {strength}, guidance_scale: {guidance_scale}, steps: {num_inference_steps}, patina: {patina}")

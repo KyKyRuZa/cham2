@@ -43,28 +43,37 @@ async def lifespan(app: FastAPI):
     _register_signals()
 
     # Загрузка SAM-2
+    logger.info("🔄 Loading SAM-2...")
     try:
         from sam2.sam2_image_predictor import SAM2ImagePredictor
+        logger.info("   SAM-2: importing SAM2ImagePredictor...")
         _predictor = SAM2ImagePredictor.from_pretrained("facebook/sam2.1-hiera-large")
+        logger.info("   SAM-2: model loaded, moving to device...")
         _predictor.model = _predictor.model.to(_device).eval()
+        logger.info(f"   SAM-2: model on device={_device}, type={type(_predictor.model)}")
         logger.info("✅ SAM-2 Hiera-L loaded")
     except Exception as e:
-        logger.error(f"❌ SAM-2 load error: {e}")
+        logger.error(f"❌ SAM-2 load error: {type(e).__name__}: {e}")
         _predictor = None
 
     # Загрузка FLUX.2 [klein] 4B (Apache 2.0)
+    logger.info("🔄 Loading FLUX.2 [klein] 4B...")
     try:
         from diffusers import Flux2KleinInpaintPipeline
+        logger.info("   FLUX: importing Flux2KleinInpaintPipeline...")
         _pipe = Flux2KleinInpaintPipeline.from_pretrained(
             "black-forest-labs/FLUX.2-klein-4B",
             torch_dtype=torch.bfloat16
         )
+        logger.info("   FLUX: pipeline loaded, moving to device...")
         _pipe.to(_device)
-        # _pipe = torch.compile(_pipe, mode="reduce-overhead")
+        logger.info(f"   FLUX: pipeline on device={_device}, type={type(_pipe)}")
         logger.info("✅ FLUX.2 [klein] 4B loaded")
     except Exception as e:
-        logger.error(f"❌ FLUX.2 load error: {e}")
+        logger.error(f"❌ FLUX.2 load error: {type(e).__name__}: {e}")
         _pipe = None
+
+    logger.info(f"📊 Final state: predictor={_predictor is not None}, pipe={_pipe is not None}")
 
     yield
 
