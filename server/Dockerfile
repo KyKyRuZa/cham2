@@ -11,6 +11,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 COPY requirements.ai.txt .
+COPY vendor/sam2 /app/vendor/sam2
 
 # BuildKit cache mount persists downloads between builds.
 # --no-cache keeps the image layer small; cache lives in BuildKit storage.
