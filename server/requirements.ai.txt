@@ -13,8 +13,8 @@ huggingface-hub>=0.34.0
 transformers==4.38.0
 accelerate==0.25.0
 
-# Ключевое: diffusers из Git (для FLUX.2)
-git+https://github.com/huggingface/diffusers.git@5be68ced497ffb8759141b9748a6fed7339d0b26
+# Ключевое: diffusers из локального клона (скачан один раз в server/vendor/diffusers)
+/app/vendor/diffusers
 
 # SAM-2 из локального клона (скачан один раз в server/vendor/sam2)
 /app/vendor/sam2
