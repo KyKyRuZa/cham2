@@ -172,63 +172,60 @@ class _SelectionCanvasState extends State<SelectionCanvas>
 
   Future<void> _loadImage() async {
     try {
-      // Decode with EXIF orientation handling to get correct dimensions
-      final img.Image? decodedImg = img.decodeImage(widget.imageBytes);
+      final bytes = widget.imageBytes;
+      final isJpeg = bytes.length > 2 &&
+          bytes[0] == 0xFF &&
+          bytes[1] == 0xD8;
+
+      if (isJpeg) {
+        final codec = await ui.instantiateImageCodec(bytes);
+        final frame = await codec.getNextFrame();
+        final displayImage = frame.image;
+        _imageSize = Size(
+          displayImage.width.toDouble(),
+          displayImage.height.toDouble(),
+        );
+        _orientedImageBytes = bytes;
+
+        final rgba = await displayImage.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        );
+        if (mounted) {
+          setState(() {
+            _decodedImage = displayImage;
+            _decodedImageRgba = rgba;
+          });
+        }
+        return;
+      }
+
+      final img.Image? decodedImg = img.decodeImage(bytes);
       if (decodedImg != null) {
-        // Apply EXIF orientation (bakes rotation into the image data)
         final img.Image orientedImg = img.bakeOrientation(decodedImg);
-        // Get dimensions AFTER orientation is applied
         _imageSize = Size(
           orientedImg.width.toDouble(),
           orientedImg.height.toDouble(),
         );
-
-        // Store oriented bytes to send to server (syncs with display)
         _orientedImageBytes = Uint8List.fromList(img.encodeJpg(orientedImg));
-
-        // Encode back to PNG for display (lossless)
-        final Uint8List orientedBytesPng = Uint8List.fromList(
-          img.encodePng(orientedImg),
-        );
-        final codec = await ui.instantiateImageCodec(orientedBytesPng);
-        final frame = await codec.getNextFrame();
-        final rgba = await frame.image.toByteData(
-          format: ui.ImageByteFormat.rawRgba,
-        );
-        if (mounted) {
-          setState(() {
-            _decodedImage = frame.image;
-            _decodedImageRgba = rgba;
-          });
-        }
-        if (kDebugMode) {
-          debugPrint(
-            'Loaded image with EXIF orientation: ${_imageSize.width}x${_imageSize.height}',
-          );
-        }
       } else {
-        // Fallback: use original bytes without EXIF handling
-        _orientedImageBytes = widget.imageBytes;
-        final codec = await ui.instantiateImageCodec(widget.imageBytes);
-        final frame = await codec.getNextFrame();
-        final rgba = await frame.image.toByteData(
-          format: ui.ImageByteFormat.rawRgba,
-        );
-        if (mounted) {
-          setState(() {
-            _decodedImage = frame.image;
-            _decodedImageRgba = rgba;
-            _imageSize = Size(
-              frame.image.width.toDouble(),
-              frame.image.height.toDouble(),
-            );
-          });
-        }
-        if (kDebugMode) {
-          debugPrint(
-            'Warning: Could not decode image for EXIF handling, using original: ${_imageSize.width}x${_imageSize.height}',
-          );
-        }
+        _orientedImageBytes = bytes;
+      }
+
+      final codec = await ui.instantiateImageCodec(_orientedImageBytes!);
+      final frame = await codec.getNextFrame();
+      final displayImage = frame.image;
+      _imageSize = Size(
+        displayImage.width.toDouble(),
+        displayImage.height.toDouble(),
+      );
+      final rgba = await displayImage.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
+      if (mounted) {
+        setState(() {
+          _decodedImage = displayImage;
+          _decodedImageRgba = rgba;
+        });
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Error loading image: $e');

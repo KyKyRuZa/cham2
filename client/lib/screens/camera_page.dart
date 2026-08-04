@@ -1,7 +1,4 @@
-import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -13,10 +10,6 @@ import '../utils/image_utils.dart';
 import '../utils/transitions.dart';
 import 'editor_screen.dart';
 import 'projects_screen.dart';
-
-Future<Uint8List> _normalizeImageBytes(Uint8List bytes) async {
-  return Future.value(normalizeImageBytes(bytes));
-}
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -208,7 +201,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       final bytes = await image.readAsBytes();
       if (!mounted) return;
       final appState = context.read<RecolorState>();
-      final normalizedBytes = await _normalizeImageBytes(bytes);
+      final normalizedBytes = normalizeImageBytes(bytes);
       appState.setCapturedImage(normalizedBytes);
       if (!mounted) return;
       Navigator.push(
@@ -266,7 +259,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           return;
         }
         final appState = context.read<RecolorState>();
-        final normalizedBytes = await _normalizeImageBytes(bytes);
+        final normalizedBytes = normalizeImageBytes(bytes);
         appState.setCapturedImage(normalizedBytes);
         if (!mounted) {
           setState(() => _isNativeCameraOpen = false);
@@ -625,7 +618,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
         if (mounted) {
           final appState = context.read<RecolorState>();
-          final normalizedBytes = await _normalizeImageBytes(bytes);
+          final normalizedBytes = normalizeImageBytes(bytes);
           appState.setCapturedImage(normalizedBytes);
           if (!mounted) return;
           Navigator.push(
