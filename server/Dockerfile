@@ -18,7 +18,11 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/appuser/.local
 COPY --from=builder /app/requirements.ai.txt .
 COPY app.py .
-COPY server/ ./server/
+COPY config.py .
+COPY prompts.py .
+COPY state.py .
+COPY routes/ ./routes/
+COPY services/ ./services/
 RUN chown -R appuser:appuser /app
 USER appuser
 ENV PATH=/home/appuser/.local/bin:$PATH

@@ -56,10 +56,6 @@ async def lifespan(app: FastAPI):
             torch_dtype=torch.bfloat16
         )
         _pipe.to(_device)
-        if _device == "cuda":
-            _pipe.enable_sequential_cpu_offload()
-            _pipe.enable_attention_slicing()
-            _pipe.enable_vae_slicing()
         logger.info("✅ FLUX.2 [klein] 4B loaded")
     except Exception as e:
         logger.error(f"❌ FLUX.2 load error: {e}")
