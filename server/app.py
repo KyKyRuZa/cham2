@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
             torch_dtype=torch.bfloat16
         )
         _pipe.to(_device)
-        _pipe = torch.compile(_pipe, mode="reduce-overhead")
+        # _pipe = torch.compile(_pipe, mode="reduce-overhead")
         logger.info("✅ FLUX.2 [klein] 4B loaded")
     except Exception as e:
         logger.error(f"❌ FLUX.2 load error: {e}")
