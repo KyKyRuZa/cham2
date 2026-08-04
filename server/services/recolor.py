@@ -123,7 +123,7 @@ def run_recolor_job(task: RecolorTask) -> bytes:
     all_scores = []
     all_coords = [(point_x, point_y)] + jitter_points
 
-    with torch.no_grad():
+    with torch.inference_mode():
         if hasattr(_predictor, 'reset_state'):
             _predictor.reset_state()
         _predictor.set_image(source_image_np)
@@ -307,9 +307,6 @@ def run_recolor_job(task: RecolorTask) -> bytes:
     response_content = buf.getvalue()
     buf.close()
 
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-        torch.cuda.synchronize()
     global _request_counter
     _request_counter += 1
     if _request_counter % 10 == 0:
