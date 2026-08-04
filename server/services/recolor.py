@@ -107,21 +107,30 @@ def run_recolor_job(task: RecolorTask) -> bytes:
     # Проверяем, что source_image всё ещё валидна после всех операций
     logger.info(f"   source_image type before generation: {type(source_image)}, size: {source_image.size if source_image else 'N/A'}")
 
-    # 3. Сегментация SAM-2 с consistency-check (2 прогона с джиттер-точками)
+    # 3. Сегментация SAM-2 с consistency-check (3 прогона: основной + 2 джиттер-точки + negative points)
     seg_start = time.time()
 
-    # Генерируем 2 джиттер-точки вокруг исходной точки клика
-    jitter_offsets = [(8, 0), (0, -8)]
+    jitter_offsets = [(8, 0), (0, -8), (-6, 3), (3, 6)]
     jitter_points = []
     for dx, dy in jitter_offsets:
         jx = max(0, min(image_width - 1, point_x + dx))
         jy = max(0, min(image_height - 1, point_y + dy))
         jitter_points.append((jx, jy))
 
-    # Выполняем сегментацию для каждой точки
+    negative_offsets = [(20, 20), (-20, 20), (20, -20), (-20, -20)]
+    negative_points = []
+    for dx, dy in negative_offsets:
+        nx = max(0, min(image_width - 1, point_x + dx))
+        ny = max(0, min(image_height - 1, point_y + dy))
+        negative_points.append((nx, ny))
+
+    all_coords = [(point_x, point_y)] + jitter_points
+    all_labels = [1] * len(all_coords) + [0] * len(negative_points)
+    all_coords = all_coords + negative_points
+
     all_mask_candidates = []
     all_scores = []
-    all_coords = [(point_x, point_y)] + jitter_points
+    all_logits_list = []
 
     with torch.inference_mode():
         if hasattr(_predictor, 'reset_state'):
@@ -131,32 +140,40 @@ def run_recolor_job(task: RecolorTask) -> bytes:
         for cx, cy in all_coords:
             masks, scores, logits = _predictor.predict(
                 point_coords=np.array([[cx, cy]]),
-                point_labels=np.array([1]),
+                point_labels=np.array([1 if (cx, cy) in [(point_x, point_y)] + jitter_points else 0]),
                 multimask_output=True,
             )
             best_idx_local = np.argmax(scores)
             all_mask_candidates.append(masks[best_idx_local])
             all_scores.append(scores[best_idx_local])
-            logger.info(f"   SAM-2: point=({cx}, {cy}), best mask score={scores[best_idx_local]:.3f}")
+            all_logits_list.append(logits[best_idx_local])
+            logger.info(f"   SAM-2: point=({cx}, {cy}), label={'positive' if (cx, cy) in [(point_x, point_y)] + jitter_points else 'negative'}, best mask score={scores[best_idx_local]:.3f}")
 
-    # Находим финальную маску по максимальному среднему IoU
+    primary_masks = all_mask_candidates[:len(jitter_points) + 1]
+    primary_coords = all_coords[:len(jitter_points) + 1]
+
     best_mask_idx = 0
     best_mean_iou = 0.0
-    for i, mask_i in enumerate(all_mask_candidates):
-        ious = [mask_iou(mask_i, all_mask_candidates[j]) for j in range(len(all_mask_candidates)) if j != i]
+    for i, mask_i in enumerate(primary_masks):
+        ious = []
+        for j, mask_j in enumerate(primary_masks):
+            if i != j:
+                ious.append(mask_iou(mask_i, mask_j))
         mean_iou = sum(ious) / len(ious) if ious else 0.0
         if mean_iou > best_mean_iou:
             best_mean_iou = mean_iou
             best_mask_idx = i
 
-    best_mask = all_mask_candidates[best_mask_idx]
+    best_mask = primary_masks[best_mask_idx]
+    best_mask_score = all_scores[best_mask_idx]
+    best_mask_coords = primary_coords[best_mask_idx]
+    best_mask_logits = all_logits_list[best_mask_idx]
     mask_area = np.sum(best_mask)
     mask_area_percent = mask_area / (image_width * image_height) * 100
 
-    logger.info(f"   SAM-2: final mask from point {all_coords[best_mask_idx]}, score={all_scores[best_mask_idx]:.3f}")
+    logger.info(f"   SAM-2: final mask from point {best_mask_coords}, score={best_mask_score:.3f}")
     logger.info(f"   SAM-2: mask area={mask_area} pixels ({mask_area_percent:.2f}% of image), mean IoU={best_mean_iou:.3f}")
 
-    # Проверка стабильности сегментации
     if best_mean_iou < 0.5:
         logger.warning(f"⚠️  Low mask consistency (mean IoU={best_mean_iou:.3f} < 0.5) — point may be near object boundary")
 
@@ -164,7 +181,7 @@ def run_recolor_job(task: RecolorTask) -> bytes:
         logger.warning("⚠️  Mask area is very small – object might not be detected!")
 
     seg_time = time.time() - seg_start
-    logger.info(f"   Segmentation took {seg_time:.2f}s (2 runs with consistency-check)")
+    logger.info(f"   Segmentation took {seg_time:.2f}s (3 runs with consistency-check)")
 
     # 4. Формирование промпта с цветом (именованное название) и названием объекта
     # Используем переданное имя цвета если оно есть
