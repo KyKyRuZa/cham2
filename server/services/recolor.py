@@ -181,8 +181,28 @@ def run_recolor_job(task: RecolorTask) -> bytes:
     else:
         exact_color_desc = hex_color_str
 
-    # Яркие цвета не нужно усиливать словом "bright"
-    bright_colors = {"light blue", "light coral", "light pink", "white", "off white", "yellow", "aqua", "cyan", "light gray"}
+    # Определяем теплоту цвета для более точного промпта
+    warm_color_names = {
+        "red", "crimson", "orange", "gold", "bronze", "copper", "brass",
+        "yellow", "orange red", "dark orange", "salmon", "tomato",
+        "sandy brown", "chocolate", "sienna", "peru", "burlywood",
+        "firebrick", "indian red", "light coral", "dark goldenrod",
+    }
+    cool_color_names = {
+        "blue", "navy blue", "midnight blue", "cyan", "turquoise",
+        "aquamarine", "teal", "light sea green", "dark turquoise",
+        "pale turquoise", "cornflower blue", "dodger blue", "royal blue",
+        "medium blue", "steel blue", "sky blue", "deep sky blue",
+        "cadet blue", "slate blue", "dark slate blue", "medium slate blue",
+        "blue violet", "dark violet", "indigo", "dark orchid",
+        "medium orchid", "violet",
+    }
+    color_tone = ""
+    base_color_name = color_name.replace("very dark ", "").replace("dark ", "").replace("bright ", "")
+    if base_color_name in warm_color_names:
+        color_tone = "warm tone, "
+    elif base_color_name in cool_color_names:
+        color_tone = "cool tone, "
 
     # Специальные имена металлов
     exact_metal_names = {"gold", "silver", "bronze", "stainless_steel", "brass", "copper", "titanium"}
@@ -192,17 +212,18 @@ def run_recolor_job(task: RecolorTask) -> bytes:
     # (с блеском у металлов и текстурой у дерева/кожи/ткани и т.п.),
     # независимо от того, выбран ли вариант текстуры.
     if material == "no_texture":
-        # Без текстуры - только цвет (для всех материалов)
-        prompt = f"The {object_name} is recolored to {exact_color_desc}, same shape, flat {color_name} color, hex {hex_color_str}, no texture, smooth matte surface, photorealistic"
+        prompt = (
+            f"The {object_name} is recolored to {exact_color_desc}, "
+            f"same shape, flat {color_name} color, no texture, "
+            f"smooth matte surface, photorealistic, solid {color_name} color, clean finish"
+        )
     elif material == "metal":
         # Металл: блеск и отражения. Конкретный металл берётся по имени цвета,
         # иначе — универсальный металл. Материал «металл» здесь главный.
         if color_name in exact_metal_names:
             prompt_template = MATERIAL_PROMPTS.get(color_name, MATERIAL_PROMPTS["metal"])
-        elif color_name in bright_colors:
-            prompt_template = MATERIAL_PROMPTS["metal"].replace("bright ", "").replace("vivid ", "")
         else:
-            prompt_template = MATERIAL_PROMPTS["bronze"] if color_name == "bronze" else MATERIAL_PROMPTS["metal"]
+            prompt_template = MATERIAL_PROMPTS["metal"]
         prompt = prompt_template.format(color=exact_color_desc, object=object_name)
     else:
         # Любой другой материал (дерево, пластик, ткань, кожа, стекло, керамика, бетон):
@@ -210,9 +231,11 @@ def run_recolor_job(task: RecolorTask) -> bytes:
         # Материал имеет приоритет над тем, как назван цвет, чтобы, например,
         # коричневый или серебристый цвет не превращал дерево/пластик в металл.
         prompt_template = MATERIAL_PROMPTS.get(material, DEFAULT_PROMPT)
-        if color_name in bright_colors:
-            prompt_template = prompt_template.replace("bright ", "").replace("vivid ", "")
         prompt = prompt_template.format(color=exact_color_desc, object=object_name)
+
+    # Добавляем тон цвета для большей точности
+    if color_tone:
+        prompt = prompt.replace("photorealistic", f"{color_tone}photorealistic")
 
     # Эффект старения (патина) для металла: добавляем признаки износа/окисления
     if material == "metal" and patina:
@@ -273,9 +296,9 @@ def run_recolor_job(task: RecolorTask) -> bytes:
     gen_time = time.time() - gen_start
     logger.info(f"   Generation took {gen_time:.2f}s")
 
-    # 8. Точная подгонка цвета под пипетку (вариант 2):
+    # 8. Точная подгонка цвета под пипетку:
     # подтягиваем средний цвет замаскированной области к целевому color_hex,
-    # сохраняя текстуру/блики от FLUX. Работает ТОЛЬКО когда цвет взят пипеткой.
+    # сохраняя локальные вариации яркости (шейдинг) от FLUX.
     if from_pipette and None not in (color_r, color_g, color_b) and best_mask is not None:
         try:
             result_np = np.array(result, dtype=np.float32)
@@ -284,9 +307,12 @@ def run_recolor_job(task: RecolorTask) -> bytes:
             region = result_np[mask]
             if region.size > 0:
                 mean = region.mean(axis=0)
-                # сила подгонки: 0.85 — близко к целевому, но оставляем объём
-                shift = (target - mean) * 0.85
-                result_np[mask] = np.clip(region + shift, 0, 255)
+                # Масштабируем каждый канал отдельно, сохраняя относительные вариации
+                scale = np.where(mean > 10, target / mean, 1.0)
+                scale = np.clip(scale, 0.5, 2.0)
+                # Смешиваем с единичным масштабом для мягкости
+                scale = 0.75 * scale + 0.25
+                result_np[mask] = np.clip(region * scale[None, :], 0, 255)
                 result = Image.fromarray(result_np.astype(np.uint8))
                 logger.info(f"   Applied pipette color-match to target {target.tolist()}")
         except Exception as e:
