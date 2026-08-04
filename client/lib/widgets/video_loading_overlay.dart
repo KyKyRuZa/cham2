@@ -5,18 +5,14 @@ class VideoLoadingOverlay extends StatelessWidget {
   final bool visible;
   final String? message;
 
-  const VideoLoadingOverlay({
-    super.key,
-    required this.visible,
-    this.message,
-  });
+  const VideoLoadingOverlay({super.key, required this.visible, this.message});
 
   @override
   Widget build(BuildContext context) {
     if (!visible) return const SizedBox.shrink();
 
     final size = MediaQuery.of(context).size;
-    final side = size.shortestSide * 0.55;
+    final side = size.shortestSide * 1;
 
     return Container(
       color: Colors.black54,
@@ -28,7 +24,7 @@ class VideoLoadingOverlay extends StatelessWidget {
               width: side,
               height: side,
               child: Lottie.asset(
-                'assets/zagruuuuzka.lottie',
+                'assets/video/loading.lottie',
                 fit: BoxFit.contain,
                 repeat: true,
                 animate: true,

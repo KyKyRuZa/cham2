@@ -87,52 +87,64 @@ class _EditorScreenState extends State<EditorScreen>
           Positioned.fill(
             bottom: 220,
             child: Consumer3<RecolorState, SelectionState, SettingsState>(
-              builder: (context, recolorState, selectionState, settingsState, child) {
-                final imageBytes = recolorState.capturedImage;
-                final previewBytes = recolorState.previewImage;
+              builder:
+                  (
+                    context,
+                    recolorState,
+                    selectionState,
+                    settingsState,
+                    child,
+                  ) {
+                    final imageBytes = recolorState.capturedImage;
+                    final previewBytes = recolorState.previewImage;
 
-                if (imageBytes == null) {
-                  return const _EmptyCanvasPlaceholder();
-                }
+                    if (imageBytes == null) {
+                      return const _EmptyCanvasPlaceholder();
+                    }
 
-                return RepaintBoundary(
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.basic,
-                    child: SelectionCanvas(
-                      key: const ValueKey('selection_canvas'),
-                      imageBytes: imageBytes,
-                      previewImage: previewBytes,
-                      selectionMask: (settingsState.isPreviewMode && recolorState.previewImage != null) ? Uint8List(0) : selectionState.selectionMask,
-                      currentTool: _selectedTool,
-                      brushSize: _brushSize,
-                      lassoPoints: const [],
-                      polygonPoints: const [],
-                      rectanglePoints: const [],
-                      boundaryPoints: const [],
-                      onSelectionUpdate: selectionState.setSelectionMask,
-                      onLassoPointsUpdate: (_) {},
-                      onPolygonPointsUpdate: (_) {},
-                      onRectanglePointsUpdate: (_) {},
-                      onBoundaryStart: null,
-                      onBoundaryPoint: null,
-                      onBoundaryEnd: null,
-                      onDrawingStart: () {},
-                      onDrawingEnd: () {},
-                      onAutoSegmentTap:
-                          _selectedTool ==
-                                  SelectionTool.interactiveSegmentation &&
-                              _fabInitialized &&
-                              _isSegmentationModeActive
-                          ? _handleAutoSegmentation
-                          : null,
-                      onPickColorTap: _selectedTool == SelectionTool.eyedropper
-                          ? _handlePickColor
-                          : null,
-                      isSegmentationModeActive: _isSegmentationModeActive,
-                    ),
-                  ),
-                );
-              },
+                    return RepaintBoundary(
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.basic,
+                        child: SelectionCanvas(
+                          key: const ValueKey('selection_canvas'),
+                          imageBytes: imageBytes,
+                          previewImage: previewBytes,
+                          selectionMask:
+                              (settingsState.isPreviewMode &&
+                                  recolorState.previewImage != null)
+                              ? Uint8List(0)
+                              : selectionState.selectionMask,
+                          currentTool: _selectedTool,
+                          brushSize: _brushSize,
+                          lassoPoints: const [],
+                          polygonPoints: const [],
+                          rectanglePoints: const [],
+                          boundaryPoints: const [],
+                          onSelectionUpdate: selectionState.setSelectionMask,
+                          onLassoPointsUpdate: (_) {},
+                          onPolygonPointsUpdate: (_) {},
+                          onRectanglePointsUpdate: (_) {},
+                          onBoundaryStart: null,
+                          onBoundaryPoint: null,
+                          onBoundaryEnd: null,
+                          onDrawingStart: () {},
+                          onDrawingEnd: () {},
+                          onAutoSegmentTap:
+                              _selectedTool ==
+                                      SelectionTool.interactiveSegmentation &&
+                                  _fabInitialized &&
+                                  _isSegmentationModeActive
+                              ? _handleAutoSegmentation
+                              : null,
+                          onPickColorTap:
+                              _selectedTool == SelectionTool.eyedropper
+                              ? _handlePickColor
+                              : null,
+                          isSegmentationModeActive: _isSegmentationModeActive,
+                        ),
+                      ),
+                    );
+                  },
             ),
           ),
 
@@ -152,10 +164,7 @@ class _EditorScreenState extends State<EditorScreen>
           Consumer<SettingsState>(
             builder: (context, settingsState, child) {
               if (!settingsState.isLoading) return const SizedBox.shrink();
-              return VideoLoadingOverlay(
-                visible: true,
-                message: AppLocalizations.tr(context, 'ai_recoloring'),
-              );
+              return VideoLoadingOverlay(visible: true);
             },
           ),
         ],
@@ -239,7 +248,7 @@ class _EditorScreenState extends State<EditorScreen>
                   label: AppLocalizations.tr(context, 'material'),
                   onTap: () => _showMaterialSelection(context),
                   child: const _IconInFrameWidget(
-                    assetPath: 'assets/icons/Diagonal Lines.png',
+                    assetPath: 'assets/icons/material.png',
                     size: 48,
                   ),
                 ),
@@ -263,11 +272,11 @@ class _EditorScreenState extends State<EditorScreen>
     const double thumbSize = 54;
 
     TextStyle labelStyle(bool active) => TextStyle(
-          color: active ? Colors.black : Colors.white70,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.1,
-        );
+      color: active ? Colors.black : Colors.white70,
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
+    );
 
     return GestureDetector(
       onTap: () {
@@ -310,12 +319,18 @@ class _EditorScreenState extends State<EditorScreen>
               children: [
                 Expanded(
                   child: Center(
-                    child: Text(AppLocalizations.tr(context, 'easy'), style: labelStyle(!complex)),
+                    child: Text(
+                      AppLocalizations.tr(context, 'easy'),
+                      style: labelStyle(!complex),
+                    ),
                   ),
                 ),
                 Expanded(
                   child: Center(
-                    child: Text(AppLocalizations.tr(context, 'complex'), style: labelStyle(complex)),
+                    child: Text(
+                      AppLocalizations.tr(context, 'complex'),
+                      style: labelStyle(complex),
+                    ),
                   ),
                 ),
               ],
@@ -332,10 +347,7 @@ class _EditorScreenState extends State<EditorScreen>
     return AnimatedBuilder(
       animation: _fabPulseAnimation,
       builder: (context, child) {
-        return Transform.scale(
-          scale: _fabPulseAnimation.value,
-          child: child,
-        );
+        return Transform.scale(scale: _fabPulseAnimation.value, child: child);
       },
       child: GestureDetector(
         onTap: () {
@@ -363,7 +375,9 @@ class _EditorScreenState extends State<EditorScreen>
                 boxShadow: isActive
                     ? [
                         BoxShadow(
-                           color: const Color(0xFFFFC107).withAlpha((0.5 * animValue * 255).round()),
+                          color: const Color(
+                            0xFFFFC107,
+                          ).withAlpha((0.5 * animValue * 255).round()),
                           blurRadius: 20 * animValue,
                           spreadRadius: 4 * animValue,
                         ),
@@ -392,7 +406,12 @@ class _EditorScreenState extends State<EditorScreen>
 
   /// Обрабатывает клик для авто-сегментации объекта с AI-перекраской.
   /// Координаты уже преобразованы в пространство исходного изображения.
-  Future<void> _handleAutoSegmentation(Uint8List orientedBytes, Offset imagePosition, int imageWidth, int imageHeight) async {
+  Future<void> _handleAutoSegmentation(
+    Uint8List orientedBytes,
+    Offset imagePosition,
+    int imageWidth,
+    int imageHeight,
+  ) async {
     _lastTapImagePosition = imagePosition;
     _lastImageSize = Size(imageWidth.toDouble(), imageHeight.toDouble());
     _lastImageBytes = orientedBytes;
@@ -406,7 +425,13 @@ class _EditorScreenState extends State<EditorScreen>
     );
   }
 
-  Future<void> _runAIRecolor(Uint8List orientedBytes, Offset imagePosition, Size imageSize, {String? colorName, bool fromPipette = false}) async {
+  Future<void> _runAIRecolor(
+    Uint8List orientedBytes,
+    Offset imagePosition,
+    Size imageSize, {
+    String? colorName,
+    bool fromPipette = false,
+  }) async {
     if (_isProcessing) return;
     _isProcessing = true;
 
@@ -425,8 +450,14 @@ class _EditorScreenState extends State<EditorScreen>
     if (settingsState.isPreviewMode) settingsState.togglePreviewMode();
 
     try {
-      if (kDebugMode) debugPrint('AI recolor: position=$imagePosition, imageSize=$imageSize');
-      if (kDebugMode) debugPrint('[DEBUG] material=${settingsState.selectedMaterial}, colorName=$colorName, colorHex=${selectionState.selectedColor.toARGB32()}, selectedColorName=${selectionState.selectedColorName}');
+      if (kDebugMode) {
+        debugPrint('AI recolor: position=$imagePosition, imageSize=$imageSize');
+      }
+      if (kDebugMode) {
+        debugPrint(
+          '[DEBUG] material=${settingsState.selectedMaterial}, colorName=$colorName, colorHex=${selectionState.selectedColor.toARGB32()}, selectedColorName=${selectionState.selectedColorName}',
+        );
+      }
 
       final resultBytes = await _segmentationService.segmentObject(
         imageBytes: orientedBytes,
@@ -468,18 +499,20 @@ class _EditorScreenState extends State<EditorScreen>
           );
         }
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(
-            content: Text(AppLocalizations.tr(
-                context, 'ai_recolor_error'))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.tr(context, 'ai_recolor_error')),
+          ),
+        );
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Ошибка AI: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${AppLocalizations.tr(context, 'ai_error')}: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocalizations.tr(context, 'ai_error')}: $e'),
+          ),
+        );
       }
     } finally {
       _isProcessing = false;
@@ -497,7 +530,13 @@ class _EditorScreenState extends State<EditorScreen>
   /// активный (как будто выбрали в палитре). Сама перекраска не
   /// запускается — пользователь затем нажимает FAB и выбирает объект.
   /// Инструмент срабатывает один раз и сбрасывается после выбора цвета.
-  void _handlePickColor(Uint8List orientedBytes, Offset imagePosition, int imageWidth, int imageHeight, Color pickedColor) {
+  void _handlePickColor(
+    Uint8List orientedBytes,
+    Offset imagePosition,
+    int imageWidth,
+    int imageHeight,
+    Color pickedColor,
+  ) {
     if (_isProcessing) return;
 
     setState(() {
@@ -506,7 +545,8 @@ class _EditorScreenState extends State<EditorScreen>
     });
 
     final selectionState = context.read<SelectionState>();
-    final colorHex = '#${pickedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
+    final colorHex =
+        '#${pickedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
     selectionState.setSelectedColor(pickedColor);
     selectionState.setSelectedColorName(colorHex, fromPipette: true);
 
@@ -554,7 +594,10 @@ class _EditorScreenState extends State<EditorScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    AppLocalizations.tr(context, 'color_picked_with_eyedropper'),
+                    AppLocalizations.tr(
+                      context,
+                      'color_picked_with_eyedropper',
+                    ),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -607,8 +650,15 @@ class _EditorScreenState extends State<EditorScreen>
       selectionState.setSelectedColor(result['color']);
       final colorName = result['colorName'] as String?;
       selectionState.setSelectedColorName(colorName);
-      if (_lastImageBytes != null && _lastTapImagePosition != null && _lastImageSize != null) {
-        await _runAIRecolor(_lastImageBytes!, _lastTapImagePosition!, _lastImageSize!, colorName: colorName);
+      if (_lastImageBytes != null &&
+          _lastTapImagePosition != null &&
+          _lastImageSize != null) {
+        await _runAIRecolor(
+          _lastImageBytes!,
+          _lastTapImagePosition!,
+          _lastImageSize!,
+          colorName: colorName,
+        );
       }
     }
   }
@@ -670,7 +720,7 @@ class _EditorTopToolbar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _TopIconBtn('assets/icons/Vector.png', onTap: onBackToCamera),
+            _TopIconBtn('assets/icons/back_arrow.png', onTap: onBackToCamera),
             _TopIconBtn('assets/icons/home.png', onTap: onGoHome),
           ],
         ),
@@ -729,10 +779,7 @@ class _BottomAction extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: child,
-          ),
+          Padding(padding: const EdgeInsets.all(10.0), child: child),
           const SizedBox(height: 6),
           Text(
             label,

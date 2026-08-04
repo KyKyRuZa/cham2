@@ -58,36 +58,37 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                   child: Row(
                     children: [
-                      SizedBox(
-                        width: 38,
-                        height: 38,
-                      ),
+                      SizedBox(width: 38, height: 38),
                       const SizedBox(width: 12),
-Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppLocalizations.tr(context, 'your_projects'),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppLocalizations.tr(context, 'your_projects'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
                               ),
-                              Text(
-                                AppLocalizations.tr(
-                                    context, 'your_items_for_recoloring'),
-                                style: const TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 13,
-                                ),
+                            ),
+                            Text(
+                              AppLocalizations.tr(
+                                context,
+                                'your_items_for_recoloring',
                               ),
-                            ],
-                          ),
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        _circleIconBtn('assets/icons/setings.png', onTap: () {
+                      ),
+                      const SizedBox(width: 8),
+                      _circleIconBtn(
+                        'assets/icons/setings.png',
+                        onTap: () {
                           Navigator.push(
                             context,
                             AppTransitions.slideRoute(
@@ -95,7 +96,8 @@ Expanded(
                               direction: SlideDirection.left,
                             ),
                           );
-                        }),
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -127,18 +129,23 @@ Expanded(
                           itemBuilder: (context, index) {
                             final project = projects[index];
                             return GestureDetector(
- onTap: () {
-                                final recolorState = context.read<RecolorState>();
-                                recolorState.setCapturedImage(project.imageBytes);
+                              onTap: () {
+                                final recolorState = context
+                                    .read<RecolorState>();
+                                recolorState.setCapturedImage(
+                                  project.imageBytes,
+                                );
                                 Navigator.push(
                                   context,
                                   AppTransitions.slideRoute(
-                                    ExportScreen(initialImageBytes: project.imageBytes),
+                                    ExportScreen(
+                                      initialImageBytes: project.imageBytes,
+                                    ),
                                     direction: SlideDirection.left,
                                   ),
                                 );
                               },
-child: ClipRRect(
+                              child: ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
                                 child: Stack(
                                   fit: StackFit.expand,
@@ -152,9 +159,8 @@ child: ClipRRect(
                                       top: 8,
                                       left: 8,
                                       child: GestureDetector(
-                                        onTap: () => projectState.toggleProjectLike(
-                                            project.id,
-                                          ),
+                                        onTap: () => projectState
+                                            .toggleProjectLike(project.id),
                                         child: Container(
                                           width: 32,
                                           height: 32,
@@ -167,7 +173,7 @@ child: ClipRRect(
                                           child: Padding(
                                             padding: const EdgeInsets.all(7),
                                             child: Image.asset(
-                                              'assets/icons/Love.png',
+                                              'assets/icons/favorite.png',
                                               color: Colors.white,
                                             ),
                                           ),
@@ -179,7 +185,9 @@ child: ClipRRect(
                                       top: 8,
                                       right: 8,
                                       child: GestureDetector(
-                                        onTap: () => projectState.deleteProject(project.id),
+                                        onTap: () => projectState.deleteProject(
+                                          project.id,
+                                        ),
                                         child: Container(
                                           width: 32,
                                           height: 32,
@@ -216,8 +224,7 @@ child: ClipRRect(
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
-                            if (defaultTargetPlatform ==
-                                TargetPlatform.iOS) {
+                            if (defaultTargetPlatform == TargetPlatform.iOS) {
                               _openNativeCamera();
                             } else {
                               Provider.of<RecolorState>(
@@ -239,20 +246,20 @@ child: ClipRRect(
                               color: const Color(0xFFF5C518),
                               borderRadius: BorderRadius.circular(28),
                             ),
-child: Center(
-                               child: Text(
-                                 AppLocalizations.tr(context, 'take_photo'),
+                            child: Center(
+                              child: Text(
+                                AppLocalizations.tr(context, 'take_photo'),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black,
                                 ),
                               ),
-                              ),
                             ),
                           ),
-),
-                       const SizedBox(width: 10),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       GestureDetector(
                         onTap: _pickFromGallery,
                         child: Container(
@@ -291,8 +298,13 @@ child: Center(
       if (navigatorContext.mounted) {
         ScaffoldMessenger.of(navigatorContext).showSnackBar(
           SnackBar(
-              content: Text(AppLocalizations.tr(
-                  navigatorContext, 'camera_requires_permission'))),
+            content: Text(
+              AppLocalizations.tr(
+                navigatorContext,
+                'camera_requires_permission',
+              ),
+            ),
+          ),
         );
       }
       return;
@@ -330,8 +342,10 @@ child: Center(
       if (navigatorContext.mounted) {
         ScaffoldMessenger.of(navigatorContext).showSnackBar(
           SnackBar(
-              content: Text(
-                  '${AppLocalizations.tr(navigatorContext, 'camera_error')}: $e')),
+            content: Text(
+              '${AppLocalizations.tr(navigatorContext, 'camera_error')}: $e',
+            ),
+          ),
         );
       }
     }
@@ -358,8 +372,9 @@ child: Center(
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.tr(
-                context, 'gallery_permission_required')),
+            content: Text(
+              AppLocalizations.tr(context, 'gallery_permission_required'),
+            ),
           ),
         );
       }
@@ -374,7 +389,9 @@ child: Center(
       );
       if (image != null) {
         final bytes = await image.readAsBytes();
-        if (kDebugMode) debugPrint('Picked image from gallery: ${bytes.length} bytes');
+        if (kDebugMode) {
+          debugPrint('Picked image from gallery: ${bytes.length} bytes');
+        }
 
         if (mounted) {
           final normalizedBytes = normalizeImageBytes(bytes);
@@ -396,8 +413,10 @@ child: Center(
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  '${AppLocalizations.tr(context, 'error_selecting_image')}: $e')),
+            content: Text(
+              '${AppLocalizations.tr(context, 'error_selecting_image')}: $e',
+            ),
+          ),
         );
       }
     }

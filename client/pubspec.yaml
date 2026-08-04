@@ -71,46 +71,25 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/logo.png"
+  image_path: "assets/logo.png"
 
 flutter:
   uses-material-design: true
   assets:
     - .env
-    - assets/logo/logotip.png
-    - assets/icons/logo.png
+    - assets/logo.png
     - assets/icons/Add_Image.png
     - assets/icons/Close.png
-    - assets/icons/Color_Dropper.png
-    - assets/icons/Done.png
-    - assets/icons/Eraser.png
-    - assets/icons/Eye.png
-    - assets/icons/Fantasy.png
-    - assets/icons/Fill_Drip.png
-    - assets/icons/Full_Screen.png
-    - assets/icons/Love.png
+    - assets/icons/favorite.png
     - assets/icons/setings.png
-    - assets/icons/Paint.png
-    - assets/icons/Reset.png
-    - assets/icons/Search.png
-    - assets/icons/Squared_Menu.png
-    - assets/icons/Vector.png
+    - assets/icons/back_arrow.png
     - assets/icons/light.png
     - assets/icons/home.png
     - assets/icons/frontalka.png
-    - assets/icons/Group_2977.png
     - assets/icons/Hand Cursor.png
     - assets/icons/Paint Palette.png
-    - assets/icons/Diagonal Lines.png
+    - assets/icons/material.png
     - assets/icons/ramka.png
     - assets/icons/Color Dropper_layerstyle.png
     - assets/textures/metal_texture.png
-    - assets/textures/metall1.png
-    - assets/textures/metall2.png
-    - assets/textures/metall3.png
-    - assets/metall/Rectangle 863.png
-    - assets/metall/Rectangle 864.png
-    - assets/metall/Rectangle 865.png
-    - assets/textures/wood1.png
-    - assets/textures/wood2.png
-    - assets/zagruuuuzka.lottie
+    - assets/video/loading.lottie
