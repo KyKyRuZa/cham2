@@ -71,21 +71,10 @@
     <string>UIInterfaceOrientationPortrait</string>
   </array>
 
-  <!-- App Transport Security settings -->
   <key>NSAppTransportSecurity</key>
   <dict>
-    <key>NSExceptionDomains</key>
-    <dict>
-      <key>87.228.10.101</key>
-      <dict>
-        <key>NSExceptionAllowsInsecureHTTPLoads</key>
-        <true/>
-        <key>NSExceptionRequiresForwardSecrecy</key>
-        <false/>
-        <key>NSIncludesSubdomains</key>
-        <true/>
-      </dict>
-    </dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
   </dict>
 </dict>
 </plist>
