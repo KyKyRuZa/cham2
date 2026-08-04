@@ -35,6 +35,8 @@ async def lifespan(app: FastAPI):
     global _predictor, _pipe, _device
     _device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info(f"Using device: {_device}")
+    if _device == "cuda":
+        torch.backends.cudnn.benchmark = True
 
     _register_signals()
 
