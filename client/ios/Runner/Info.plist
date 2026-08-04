@@ -8,7 +8,7 @@
   <string>$(DEVELOPMENT_LANGUAGE)</string>
   <key>CFBundleDisplayName</key>
   <string>chameleon</string>
-  
+
   <!-- Camera and Photo Library permissions -->
   <key>NSCameraUsageDescription</key>
   <string>This app needs camera access to take photos for furniture recoloring</string>
@@ -16,7 +16,7 @@
   <string>This app needs photo library access to select photos for furniture recoloring</string>
   <key>NSPhotoLibraryAddUsageDescription</key>
   <string>This app needs to save recolored photos to your photo library</string>
-  
+
   <key>CFBundleExecutable</key>
   <string>$(EXECUTABLE_NAME)</string>
   <key>CFBundleIdentifier</key>
@@ -70,8 +70,8 @@
   <array>
     <string>UIInterfaceOrientationPortrait</string>
   </array>
-  
-  <!-- Added from the second plist: App Transport Security settings -->
+
+  <!-- App Transport Security settings -->
   <key>NSAppTransportSecurity</key>
   <dict>
     <key>NSExceptionDomains</key>
@@ -87,4 +87,5 @@
       </dict>
     </dict>
   </dict>
+</dict>
 </plist>
