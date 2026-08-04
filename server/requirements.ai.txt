@@ -9,7 +9,7 @@ uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 slowapi==0.1.9
 python-dotenv==1.0.0
-huggingface-hub==0.20.0
+huggingface-hub>=0.34.0
 transformers==4.38.0
 accelerate==0.25.0
 xformers==0.0.23.post1
