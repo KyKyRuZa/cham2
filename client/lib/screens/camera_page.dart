@@ -352,12 +352,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final double topBarHeight = MediaQuery.of(context).padding.top + 60;
     return Scaffold(
       backgroundColor: const Color(0xFF151412),
       body: Stack(
         children: [
           if (!_isIOS)
-            SizedBox.expand(
+            Positioned(
+              top: topBarHeight,
+              left: 0,
+              right: 0,
+              bottom: 0,
               child: _isCameraInitialized && _cameraController != null
                   ? RotatedBox(
                       quarterTurns: _isLandscape ? 1 : 0,
@@ -388,7 +393,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
               top: 0,
               left: 0,
               right: 0,
-              height: MediaQuery.of(context).padding.top + 60,
+              height: topBarHeight,
               child: Container(color: const Color(0xFF151412)),
             ),
           if (!_isIOS)

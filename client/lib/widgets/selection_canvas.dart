@@ -116,9 +116,12 @@ class _SelectionCanvasState extends State<SelectionCanvas>
         widget.selectionMask.any((m) => m == 1)) {
       _selectionMaskController.forward(from: 0);
     }
-    if (widget.currentTool != oldWidget.currentTool &&
-        widget.currentTool != SelectionTool.eyedropper) {
-      _decodedImageRgba = null;
+    if (widget.currentTool != oldWidget.currentTool) {
+      if (widget.currentTool == SelectionTool.eyedropper) {
+        _loadImage();
+      } else {
+        _decodedImageRgba = null;
+      }
     }
   }
 
@@ -288,7 +291,6 @@ class _SelectionCanvasState extends State<SelectionCanvas>
         widget.onPickColorTap != null) {
       final imagePosition = _screenToImageCoordinates(position, constraints);
       final color = _pickColorAt(imagePosition);
-      _decodedImageRgba = null;
       if (color != null) {
         final orientedBytes = _orientedImageBytes ?? widget.imageBytes;
         widget.onPickColorTap!(
@@ -492,7 +494,7 @@ class _SelectionCanvasPainter extends CustomPainter {
 
     final containScaleX = size.width / imageSize.width;
     final containScaleY = size.height / imageSize.height;
-    final containScale = math.min(containScaleX, containScaleY);
+    final containScale = math.max(containScaleX, containScaleY);
     final baseWidth = imageSize.width * containScale;
     final baseHeight = imageSize.height * containScale;
     final baseOffsetX = (size.width - baseWidth) / 2;
