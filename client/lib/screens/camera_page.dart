@@ -204,14 +204,14 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       final normalizedBytes = normalizeImageBytes(bytes);
       appState.setCapturedImage(normalizedBytes);
       if (!mounted) return;
-      Navigator.push(
-        context,
-        AppTransitions.slideRoute(
-          const EditorScreen(),
-          direction: SlideDirection.left,
-          duration: const Duration(milliseconds: 120),
-        ),
-      );
+        Navigator.pushReplacement(
+          context,
+          AppTransitions.slideRoute(
+            const EditorScreen(),
+            direction: SlideDirection.left,
+            duration: const Duration(milliseconds: 120),
+          ),
+        );
     } catch (e) {
       if (kDebugMode) debugPrint('Error taking picture: $e');
     }
@@ -248,23 +248,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       }
 
       if (image != null) {
-        final bytes = await image.readAsBytes();
-        if (kDebugMode) {
-          debugPrint('Native camera image: ${bytes.length} bytes');
-        }
-
-        if (!mounted) {
-          setState(() => _isNativeCameraOpen = false);
-          return;
-        }
-        final appState = context.read<RecolorState>();
-        final normalizedBytes = normalizeImageBytes(bytes);
-        appState.setCapturedImage(normalizedBytes);
-        if (!mounted) {
-          setState(() => _isNativeCameraOpen = false);
-          return;
-        }
-        Navigator.push(
+        final recolorState = context.read<RecolorState>();
+        Navigator.pushReplacement(
           context,
           AppTransitions.slideRoute(
             const EditorScreen(),
@@ -272,6 +257,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             duration: const Duration(milliseconds: 120),
           ),
         );
+        final bytes = await image.readAsBytes();
+        if (kDebugMode) {
+          debugPrint('Native camera image: ${bytes.length} bytes');
+        }
+        final normalizedBytes = normalizeImageBytes(bytes);
+        recolorState.setCapturedImage(normalizedBytes);
       } else {
         if (!mounted) {
           setState(() => _isNativeCameraOpen = false);
@@ -632,7 +623,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           final normalizedBytes = normalizeImageBytes(bytes);
           appState.setCapturedImage(normalizedBytes);
           if (!mounted) return;
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             AppTransitions.slideRoute(
               const EditorScreen(),
