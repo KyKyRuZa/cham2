@@ -27,6 +27,8 @@ services:
 
     environment:
       - PORT=8001
+      - LOG_MODE=dev
+      - LOG_LEVEL=DEBUG
       - HF_HOME=/home/appuser/.cache/huggingface
       - HF_TOKEN=${HF_TOKEN}
       - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
