@@ -396,10 +396,17 @@ def run_recolor_job(
             region = result_np[mask]
             if region.size > 0:
                 mean = region.mean(axis=0)
-                shift = (target - mean) * 0.85
-                result_np[mask] = np.clip(region + shift, 0, 255)
+                # Защита от деления на ~0 (почти чёрный регион)
+                mean_safe = np.where(mean < 1.0, 1.0, mean)
+                # Мультипликативная коррекция (white balance) вместо плоского
+                # аддитивного сдвига: масштабирует каждый канал, сохраняя
+                # структуру/текстуру региона и меняя баланс каналов под цель.
+                ratio = target / mean_safe
+                k = 0.9
+                corrected = region * (1.0 - k + k * ratio)
+                result_np[mask] = np.clip(corrected, 0, 255)
                 result = Image.fromarray(result_np.astype(np.uint8))
-                logger.info(f"   Applied pipette color-match to target {target.tolist()}")
+                logger.info(f"   Applied pipette white-balance match to target {target.tolist()} (ratio={ratio.tolist()})")
         except Exception as e:
             logger.warning(f"⚠️  Pipette color-match skipped: {e}")
 
