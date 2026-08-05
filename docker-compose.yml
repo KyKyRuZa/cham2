@@ -1,7 +1,7 @@
 services:
   nginx:
     image: nginx:alpine
-    container_name: nginx-proxy
+    container_name: cham2-nginx-proxy
     ports:
       - "80:80"
       - "443:443"
@@ -11,16 +11,16 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
     restart: unless-stopped
     depends_on:
-      - ai-server
+      - server
     networks:
-      - segmentation-network
+      - cham2-segmentation-network
 
-  ai-server:
+  server:
     build:
       context: ./server
       dockerfile: Dockerfile
     image: segment-ai:latest
-    container_name: segment-ai
+    container_name: cham2-server
     restart: unless-stopped
     shm_size: 16g
     stop_grace_period: 30s
@@ -46,15 +46,11 @@ services:
               capabilities: [gpu]
 
     volumes:
-      # Кеш моделей Hugging Face (уже скачаны)
-      - ./hf_cache:/home/appuser/.cache/huggingface
-      # Debug-артефакты запросов (видно на хосте в ./server/debug_output/)
-      - ./server/debug_output:/app/debug_output
-      # (Опционально) для быстрой правки кода без пересборки:
-      # - ./server/app.py:/app/app.py
+      - ./hf_cache_cham2:/home/appuser/.cache/huggingface
+      - ./server/debug_output_cham2:/app/debug_output
 
     networks:
-      - segmentation-network
+      - cham2-segmentation-network
 
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
@@ -64,5 +60,5 @@ services:
       start_period: 60s
 
 networks:
-  segmentation-network:
+  cham2-segmentation-network:
     driver: bridge
