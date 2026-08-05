@@ -44,9 +44,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     if (_isIOS) {
       // Mark the native camera as opening synchronously so the very first
       // frame renders blank (no CameraPage UI flash) before the system
-      // camera modal covers the screen.
+      // camera modal covers the screen. The re-entry guard (_didOpenNativeCamera)
+      // is set inside _openNativeCamera, not here.
       _isNativeCameraOpen = true;
-      _didOpenNativeCamera = true;
       _openNativeCamera();
     } else {
       _initializeCamera();
