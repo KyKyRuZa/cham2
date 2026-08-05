@@ -7,7 +7,9 @@ Uint8List normalizeImageBytes(Uint8List bytes) {
     if (decoded == null) return bytes;
 
     final oriented = img.bakeOrientation(decoded);
-    return Uint8List.fromList(img.encodeJpg(oriented, quality: 100));
+    // quality 100 re-encodes slowly and yields an oversized intermediate;
+    // 90 is visually near-identical and substantially faster to encode.
+    return Uint8List.fromList(img.encodeJpg(oriented, quality: 90));
   } catch (e) {
     return bytes;
   }

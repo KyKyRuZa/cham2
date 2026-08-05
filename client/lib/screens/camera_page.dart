@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/recolor_state.dart';
+import '../models/settings_state.dart';
 import '../utils/app_localizations.dart';
 import '../utils/image_utils.dart';
 import '../utils/transitions.dart';
@@ -205,7 +206,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       final bytes = await image.readAsBytes();
       if (!mounted) return;
       final appState = context.read<RecolorState>();
-      final normalizedBytes = normalizeImageBytes(bytes);
+      final normalizedBytes = await compute(normalizeImageBytes, bytes);
       appState.setCapturedImage(normalizedBytes);
       if (!mounted) return;
         Navigator.pushReplacement(
@@ -242,15 +243,19 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
 
     try {
-      final recolorState = context.read<RecolorState>();
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 100,
       );
 
       if (!mounted) return;
+      final recolorState = context.read<RecolorState>();
+      final settingsState = context.read<SettingsState>();
 
       if (image != null) {
+        // Show the loading overlay in EditorScreen while the heavy decode +
+        // re-encode runs off the UI thread, so the app never freezes.
+        settingsState.setLoading(true);
         Navigator.pushReplacement(
           context,
           AppTransitions.slideRoute(
@@ -263,8 +268,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         if (kDebugMode) {
           debugPrint('Native camera image: ${bytes.length} bytes');
         }
-        final normalizedBytes = normalizeImageBytes(bytes);
+        // Run the CPU-bound normalizeImageBytes in a background isolate so the
+        // image appears as fast as possible without blocking the UI.
+        final normalizedBytes = await compute(normalizeImageBytes, bytes);
         recolorState.setCapturedImage(normalizedBytes);
+        settingsState.setLoading(false);
       } else {
         if (mounted) setState(() => _isNativeCameraOpen = false);
         Navigator.of(context).pushAndRemoveUntil(
@@ -623,7 +631,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
         if (mounted) {
           final appState = context.read<RecolorState>();
-          final normalizedBytes = normalizeImageBytes(bytes);
+          final normalizedBytes = await compute(normalizeImageBytes, bytes);
           appState.setCapturedImage(normalizedBytes);
           if (!mounted) return;
           Navigator.pushReplacement(
