@@ -41,7 +41,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _updateOrientation();
-    if (_isIOS && !_didOpenNativeCamera) {
+    if (_isIOS) {
+      // Mark the native camera as opening synchronously so the very first
+      // frame renders blank (no CameraPage UI flash) before the system
+      // camera modal covers the screen.
+      _isNativeCameraOpen = true;
       _didOpenNativeCamera = true;
       _openNativeCamera();
     } else {
@@ -218,7 +222,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   Future<void> _openNativeCamera() async {
-    if (_isNativeCameraOpen) return;
+    if (_didOpenNativeCamera) return;
+    _didOpenNativeCamera = true;
     setState(() => _isNativeCameraOpen = true);
 
     PermissionStatus cameraStatus = await Permission.camera.request();
@@ -232,23 +237,20 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           ),
         );
       }
-      setState(() => _isNativeCameraOpen = false);
+      if (mounted) setState(() => _isNativeCameraOpen = false);
       return;
     }
 
     try {
+      final recolorState = context.read<RecolorState>();
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 100,
       );
 
-      if (!mounted) {
-        setState(() => _isNativeCameraOpen = false);
-        return;
-      }
+      if (!mounted) return;
 
       if (image != null) {
-        final recolorState = context.read<RecolorState>();
         Navigator.pushReplacement(
           context,
           AppTransitions.slideRoute(
@@ -264,10 +266,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         final normalizedBytes = normalizeImageBytes(bytes);
         recolorState.setCapturedImage(normalizedBytes);
       } else {
-        if (!mounted) {
-          setState(() => _isNativeCameraOpen = false);
-          return;
-        }
+        if (mounted) setState(() => _isNativeCameraOpen = false);
         Navigator.of(context).pushAndRemoveUntil(
           AppTransitions.fadeRoute(const ProjectsScreen()),
           (route) => false,
@@ -283,9 +282,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             ),
           ),
         );
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isNativeCameraOpen = false);
       }
     }
@@ -342,6 +338,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // On iOS the system camera is presented modally. While it is opening or
+    // active, render a blank screen so the CameraPage UI never flashes
+    // behind the native camera or during the navigation back from the editor.
+    if (_isIOS && _isNativeCameraOpen) {
+      return const Scaffold(backgroundColor: Color(0xFF151412));
+    }
+
     final double topBarHeight = MediaQuery.of(context).padding.top + 60;
     return Scaffold(
       backgroundColor: const Color(0xFF151412),
