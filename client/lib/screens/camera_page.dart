@@ -384,6 +384,14 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                   : const SizedBox.expand(),
             ),
           if (!_isIOS)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.of(context).padding.top + 60,
+              child: Container(color: const Color(0xFF151412)),
+            ),
+          if (!_isIOS)
             Positioned.fill(
               child: GestureDetector(
                 onScaleStart: (details) {
