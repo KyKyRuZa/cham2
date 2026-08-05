@@ -26,6 +26,7 @@ except Exception:
 from logger import get_logger
 from config import (
     SAM2_MODEL_NAME, SAM2_JITTER_OFFSETS, SAM2_MIN_CONSISTENCY_IOU, SAM2_MIN_MASK_AREA,
+    SAM2_MASK_CONSENSUS, SAM2_MASK_CONSENSUS_MIN_RATIO,
     FLUX_MODEL_NAME, FLUX_TORCH_DTYPE,
     FLUX_MAX_STEPS, FLUX_DEFAULT_GUIDANCE_SCALE, FLUX_DEFAULT_NUM_INFERENCE_STEPS,
     FLUX_DEFAULT_STRENGTH, FLUX_MIN_GUIDANCE_SCALE, FLUX_FALLBACK_GUIDANCE_SCALE,
@@ -59,6 +60,27 @@ def mask_iou(mask_a: np.ndarray, mask_b: np.ndarray) -> float:
     if union == 0:
         return 0.0
     return float(intersection / union)
+
+
+def _morph_erode(mask_bool: np.ndarray, iterations: int = 1) -> np.ndarray:
+    """Лёгкая эрозия (сжатие) 4-связным ядром.
+
+    Срезает 1px неуверенного «гало» на границе маски, уменьшая захват лишней
+    площади вокруг тонких объектов (провода). Не удаляет тело объекта целиком
+    (в отличие от полного opening, который стирает тонкие линии).
+    Без внешних зависимостей (numpy sliding_window_view).
+    """
+    if iterations <= 0 or mask_bool.shape[0] < 3 or mask_bool.shape[1] < 3:
+        return mask_bool
+    from numpy.lib.stride_tricks import sliding_window_view
+    m = mask_bool.astype(np.uint8)
+    for _ in range(iterations):
+        win = sliding_window_view(m, (3, 3))
+        eroded = win.min(axis=(-2, -1))
+        e = np.zeros_like(m)
+        e[1:-1, 1:-1] = eroded
+        m = e
+    return m.astype(bool)
 
 
 # --------------------- Lifespan ---------------------
@@ -285,7 +307,7 @@ def run_recolor_job(
             all_scores.append(scores[best_idx_local])
             logger.info(f"   SAM-2: point=({cx}, {cy}), best mask score={scores[best_idx_local]:.3f}")
 
-    # Находим финальную маску по максимальному среднему IoU
+    # Находим финальную маску по максимальному среднему IoU (запасной вариант)
     best_mask_idx = 0
     best_mean_iou = 0.0
     for i, mask_i in enumerate(all_mask_candidates):
@@ -295,7 +317,25 @@ def run_recolor_job(
             best_mean_iou = mean_iou
             best_mask_idx = i
 
-    best_mask = all_mask_candidates[best_mask_idx]
+    single_best_mask = all_mask_candidates[best_mask_idx]
+
+    # Консенсусная маска: пиксель остаётся, только если его выбрало
+    # большинство джиттер-прогонов. Нестабильный «ореол» вокруг тонких
+    # объектов (провода на стене) отсекается, крупные объекты сохраняются.
+    votes = np.stack(all_mask_candidates).sum(axis=0).astype(np.float32)
+    vote_fraction = votes / len(all_mask_candidates)
+    consensus_mask = _morph_erode((vote_fraction >= SAM2_MASK_CONSENSUS), iterations=1)
+
+    single_area = float(np.sum(single_best_mask))
+    if consensus_mask.sum() < SAM2_MASK_CONSENSUS_MIN_RATIO * single_area:
+        logger.warning(
+            f"⚠️  Consensus mask too small ({consensus_mask.sum()} vs single {single_area:.0f}) "
+            f"— falling back to single best mask"
+        )
+        best_mask = single_best_mask
+    else:
+        best_mask = consensus_mask
+    logger.info(f"   Mask: single_best_area={single_area:.0f}, consensus_area={float(best_mask.sum()):.0f}")
     mask_area = np.sum(best_mask)
     mask_area_percent = mask_area / (image_width * image_height) * 100
 
