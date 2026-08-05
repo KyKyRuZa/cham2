@@ -10,6 +10,7 @@ import '../models/recolor_state.dart';
 import '../models/selection_tool.dart';
 import '../widgets/selection_canvas.dart';
 import '../services/segmentation_service.dart';
+import '../utils/image_utils.dart';
 import 'color_palette_screen.dart';
 import 'material_selection_screen.dart';
 import '../utils/app_localizations.dart';
@@ -482,6 +483,9 @@ class _EditorScreenState extends State<EditorScreen>
       }
 
       if (resultBytes != null) {
+        // Show the AI result at its native (1024px) resolution right away and
+        // navigate without waiting. The full-resolution upscale runs in the
+        // background so the loading overlay doesn't linger for a couple seconds.
         recolorState.setPreviewImage(resultBytes);
         if (!settingsState.isPreviewMode) settingsState.togglePreviewMode();
         projectState.addProject(resultBytes);
@@ -490,6 +494,7 @@ class _EditorScreenState extends State<EditorScreen>
         await precacheImage(imageProvider, context);
 
         if (mounted) {
+          settingsState.setLoading(false);
           Navigator.push(
             context,
             AppTransitions.slideRoute(
@@ -497,6 +502,29 @@ class _EditorScreenState extends State<EditorScreen>
               direction: SlideDirection.up,
             ),
           );
+        }
+
+        // The segmentation/network part is done — release the processing guard
+        // so a repeat request (e.g. after going back from ExportScreen) can
+        // start immediately instead of being blocked by the upscale below.
+        _isProcessing = false;
+
+        // Upgrade to original resolution in a background isolate. Only apply it
+        // if this request's low-res preview is still the active one, otherwise a
+        // newer request has already superseded it.
+        try {
+          final upscaledResult = await compute(
+            upscaleToOriginalResolutionIsolate,
+            (resultBytes, orientedBytes),
+          );
+          if (!mounted) return;
+          if (recolorState.previewImage == resultBytes) {
+            recolorState.setPreviewImage(upscaledResult);
+            projectState.updateMostRecentProject(upscaledResult);
+            await precacheImage(MemoryImage(upscaledResult), context);
+          }
+        } catch (e) {
+          if (kDebugMode) debugPrint('Upscale error (kept low-res): $e');
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

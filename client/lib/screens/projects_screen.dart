@@ -313,7 +313,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        maxWidth: 1920,
         imageQuality: 100,
       );
 
@@ -384,7 +383,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1920,
         imageQuality: 100,
       );
       if (image != null) {

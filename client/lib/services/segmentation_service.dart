@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -47,30 +48,26 @@ class SegmentationService {
     return null;
   }
 
-  static Uint8List _compressImage(
+  static (Uint8List, double, double) _compressImage(
     Uint8List bytes, {
     int maxDim = 1024,
     int quality = 80,
   }) {
     try {
       final decoded = img.decodeImage(bytes);
-      if (decoded == null) return bytes;
-      int w = decoded.width;
-      int h = decoded.height;
-      if (w > maxDim || h > maxDim) {
-        if (w > h) {
-          h = (h * maxDim / w).round();
-          w = maxDim;
-        } else {
-          w = (w * maxDim / h).round();
-          h = maxDim;
-        }
+      if (decoded == null) return (bytes, 1.0, 1.0);
+      final int origW = decoded.width;
+      final int origH = decoded.height;
+      if (origW > maxDim || origH > maxDim) {
+        final double scale = maxDim / math.max(origW, origH);
+        final int w = origW > origH ? maxDim : (origW * scale).round();
+        final int h = origW > origH ? (origH * scale).round() : maxDim;
         final resized = img.copyResize(decoded, width: w, height: h);
-        return Uint8List.fromList(img.encodeJpg(resized, quality: quality));
+        return (Uint8List.fromList(img.encodeJpg(resized, quality: quality)), scale, scale);
       }
-      return Uint8List.fromList(img.encodeJpg(decoded, quality: quality));
+      return (Uint8List.fromList(img.encodeJpg(decoded, quality: quality)), 1.0, 1.0);
     } on Exception catch (_) {
-      return bytes;
+      return (bytes, 1.0, 1.0);
     }
   }
 
@@ -108,8 +105,8 @@ class SegmentationService {
       final int colorG = (rgbValue >> 8) & 0xFF;
       final int colorB = rgbValue & 0xFF;
 
-      // Координаты уже преобразованы в пространство исходного изображения
-      // (transmitted as imagePosition in image pixel coordinates)
+      // imagePosition передаётся в пикселях исходного изображения;
+      // ниже масштабируем его под сжатую копию, которую отправляем на сервер.
 
       final request = http.MultipartRequest(
         'POST',
@@ -119,7 +116,7 @@ class SegmentationService {
       if (apiKey != null && apiKey!.isNotEmpty) {
         request.headers['X-API-Key'] = apiKey!;
       }
-      final compressedImage = _compressImage(imageBytes);
+      final (compressedImage, scaleX, scaleY) = _compressImage(imageBytes);
       request.files.add(
         http.MultipartFile.fromBytes(
           'image',
@@ -128,8 +125,8 @@ class SegmentationService {
           contentType: MediaType('image', 'jpeg'),
         ),
       );
-      request.fields['point_x'] = imagePosition.dx.round().toString();
-      request.fields['point_y'] = imagePosition.dy.round().toString();
+      request.fields['point_x'] = (imagePosition.dx * scaleX).round().toString();
+      request.fields['point_y'] = (imagePosition.dy * scaleY).round().toString();
       request.fields['material'] = material;
       request.fields['patina'] = patina ? 'true' : 'false';
       request.fields['color_hex'] =

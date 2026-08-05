@@ -105,6 +105,19 @@ class ProjectState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Replaces the image bytes of the most recently added project (index 0)
+  /// and rewrites its file, keeping the same id.
+  void updateMostRecentProject(Uint8List imageBytes) {
+    if (_projects.isEmpty) {
+      addProject(imageBytes);
+      return;
+    }
+    final project = _projects.first;
+    _projects[0] = project.copyWith(imageBytes: imageBytes);
+    _saveProjectToFile(imageBytes, project.id);
+    notifyListeners();
+  }
+
   void deleteProject(int projectId) {
     final index = _projects.indexWhere((p) => p.id == projectId);
     if (index != -1) {

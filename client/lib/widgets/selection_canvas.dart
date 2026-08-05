@@ -209,7 +209,7 @@ class _SelectionCanvasState extends State<SelectionCanvas>
           orientedImg.width.toDouble(),
           orientedImg.height.toDouble(),
         );
-        _orientedImageBytes = Uint8List.fromList(img.encodeJpg(orientedImg));
+        _orientedImageBytes = Uint8List.fromList(img.encodeJpg(orientedImg, quality: 100));
       } else {
         _orientedImageBytes = bytes;
       }

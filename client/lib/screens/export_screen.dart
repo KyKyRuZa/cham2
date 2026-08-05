@@ -58,7 +58,18 @@ class _ExportScreenState extends State<ExportScreen> {
         ? capturedImage
         : (widget.initialImageBytes ?? previewImage ?? capturedImage);
 
-    return Scaffold(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) return;
+        final settingsState = context.read<SettingsState>();
+        final recolorState = context.read<RecolorState>();
+        recolorState.setPreviewImage(null);
+        if (settingsState.isPreviewMode) {
+          settingsState.togglePreviewMode();
+        }
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFF151412),
       appBar: AppBar(
         backgroundColor: const Color(0xFF151412),
@@ -172,9 +183,9 @@ class _ExportScreenState extends State<ExportScreen> {
           ),
         ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildImageDisplay(Uint8List? displayImage) {
     if (displayImage == null) {
       return Center(
